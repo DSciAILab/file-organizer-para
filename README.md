@@ -66,7 +66,7 @@ Nothing happens without your approval. The skill recommends, you decide.
 
 ```bash
 # Clone the repository
-git clone https://github.com/fernandocaravana/file-organizer-para.git
+git clone https://github.com/DSciAILab/file-organizer-para.git
 
 # Copy to OpenClaw skills directory
 cp -r file-organizer-para ~/.openclaw/skills/
