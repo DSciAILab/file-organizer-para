@@ -1,159 +1,196 @@
 # PARA Method Reference
 
-## Fonte
+## Source
 
-Metodologia criada por Tiago Forte.
-- Site: fortelabs.com/blog/para/
-- Livro: "The PARA Method: Simplify, Organize, and Master Your Digital
-  Life." Atria Books, 2023. ISBN 978-1982167585.
+Tiago Forte, "The PARA Method" (fortelabs.com/blog/para/) and the
+2023 book (ISBN 978-1982167585).
 
-## Principio central
+## Core principle
 
-Organizar por acionabilidade, nao por assunto. A informacao deve estar
-onde o projeto ou objetivo que vai usa-la reside, nao em categorias
-amplas de tema.
+Organize by actionability, not by topic or file type.
 
-## Definicoes
+## Four categories
 
-Projetos: esforcos de curto prazo com resultado especifico e prazo
-real ou estimado. A diferenca chave: projetos terminam.
-Exemplos de Forte: completar design de pagina web, comprar computador
-novo, escrever relatorio de pesquisa, renovar banheiro, terminar curso
-de espanhol, montar moveis da sala.
+Projects: short-term efforts with a specific outcome and deadline.
+  Examples: file tax return 2026, kitchen renovation, SJJP annual event.
 
-Areas: partes importantes do trabalho e da vida que requerem atencao
-continua. Na definicao de Forte, sao responsabilidades onde se busca
-manter um padrao ao longo do tempo.
-Exemplos de Forte: Marketing, RH, Product Management, R&D, Saude,
-Financas, Filhos, Escrita, Carro, Casa.
+Areas: ongoing responsibilities with a standard to maintain.
+  Examples: finances, health, career, family, home, work-SJJP.
 
-Recursos: topicos de interesse ou aprendizado. Nao geram
-responsabilidade direta.
-Exemplos de Forte: design grafico, produtividade pessoal, jardinagem,
-cafe, arquitetura moderna, web design, lingua japonesa, literatura
-francesa, notetaking, breathwork, formacao de habitos, fotografia.
+Resources: topics of interest or reference material.
+  Examples: investment research, recipe collection, ML tutorials.
 
-Arquivo: itens das tres categorias anteriores que nao sao mais ativos.
-Projetos concluidos ou pausados, areas que nao fazem mais parte da
-vida, recursos que perderam interesse.
+Archive: inactive items from any of the above three categories.
+  Examples: completed projects, inactive areas, outdated resources.
 
-## Nota sobre simplificacao nesta skill
+## Decision rules
 
-Para fins de organizacao de arquivos, esta skill trata areas como pastas
-de responsabilidade continua. A nuance de Forte sobre "manter um padrao"
-e relevante ao decidir: se voce tem responsabilidade pessoal sobre
-aquilo, e area. Se e apenas interesse ou referencia, e recurso.
+1. Specific result with deadline -> Projects.
+2. Continuous responsibility without end date -> Areas.
+3. Reference or learning material -> Resources.
+4. Inactive, completed or outdated -> Archive.
 
-## Extensoes operacionais desta skill (nao presentes no PARA original)
+## Areas vs Projects (the common confusion)
 
-- Convencoes de nomenclatura com prefixo de data
-- Limite de profundidade de 3 niveis
-- Separacao Trabalho/Pessoal com arvores independentes
-- Verificacao de dependencias e links
-- Manifesto, rollback e recovery
-- Modos de scan
-- Automacao de classificacao
-- Formatos de pasta numerados
-- Manutencao periodica por data de modificacao
+An ongoing program (like SJJP) is an Area. Events within that program
+(SJJP Annual Event 2026) are Projects within that Area.
 
-## Tabela de classificacao
+The question to ask: "Does this have a completion date?"
+- Yes -> Project.
+- No -> Area.
+- It is ongoing but has sub-items with deadlines -> Area with subProjects.
 
-| Item                              | Destino                          | Motivo                      |
-|-----------------------------------|----------------------------------|-----------------------------|
-| Declaracao de IR do ano atual     | 1-Projetos                       | Resultado especifico, prazo |
-| Contrato de aluguel vigente       | 2-Areas/Casa                     | Responsabilidade continua   |
-| Manual do carro                   | 2-Areas/Veiculo                  | Responsabilidade continua   |
-| Apolice de seguro ativa           | 2-Areas/Seguros                  | Responsabilidade continua   |
-| Template de proposta comercial    | 3-Recursos/Templates             | Referencia reutilizavel     |
-| Artigo salvo sobre produtividade  | 3-Recursos/Artigos               | Interesse, sem responsab.   |
-| Fotos de viagem passada           | 4-Arquivo/Projetos-concluidos    | Projeto encerrado           |
-| Relatorio mensal recorrente       | 2-Areas/Gestao-equipe            | Atividade continua          |
-| Proposta cliente em andamento     | 1-Projetos/2026-03_Proposta-X    | Entrega com prazo           |
-| Planejamento festa aniversario    | 1-Projetos/2026-05_Aniversario   | Evento com data             |
-| Arquivos antigos do Desktop       | 4-Arquivo/Legado-pre-organizacao | Sem classificacao clara     |
+## Profile schema
 
-## Arvore de decisao
+Stored in .para-config.json under "profile":
 
-1. Existe resultado especifico com prazo? Sim = 1-Projetos
-2. Existe responsabilidade continua? Sim = 2-Areas
-3. E referencia ou aprendizado? Sim = 3-Recursos
-4. Inativo, encerrado, antigo? Sim = 4-Arquivo
+```json
+{
+  "profile": {
+    "areas": [
+      {
+        "name": "Financas",
+        "aliases": ["finance", "banco", "imposto", "tax", "invoice"],
+        "subProjects": []
+      },
+      {
+        "name": "Trabalho-SJJP",
+        "aliases": ["sjjp", "coach", "attendance", "staff"],
+        "subProjects": [
+          {
+            "name": "SJJP-Evento-anual-2026",
+            "deadline": "2026-09-15",
+            "keywords": ["evento", "annual-event", "event"]
+          }
+        ]
+      }
+    ],
+    "activeProjects": [
+      {
+        "name": "Imposto-2026",
+        "area": "Financas",
+        "keywords": ["irpf", "declaracao", "receita-federal"]
+      }
+    ],
+    "resources": [
+      {
+        "name": "Templates",
+        "keywords": ["template", "modelo"]
+      }
+    ],
+    "interactionMode": "guided",
+    "createdAt": "2026-03-10T14:00:00Z",
+    "updatedAt": "2026-03-10T14:00:00Z"
+  }
+}
+```
 
-## Convencoes de nomes completas
+## Onboarding flow
 
-Pastas:
-- Projeto mensal: AAAA-MM_Nome-descritivo
-- Projeto trimestral: AAAA-QN_Nome-descritivo
-- Projeto anual: AAAA_Nome-descritivo
-- Area: Nome-descritivo
-- Recurso: Nome-descritivo
-- Subpasta: NN_Nome-descritivo (01_Briefing, 02_Rascunhos, etc)
+1. Present default areas: Health, Finances, Career, Family, Home,
+   Personal Development, Hobbies, Work.
+2. User adjusts: remove, add, rename, merge.
+3. For each item: "Has end date?" -> Area or Project.
+4. Option (c): "Ongoing with sub-projects" -> Area with subProjects.
+5. Ask for active projects with deadlines.
+6. Ask for resource topics.
+7. Ask for interaction mode: Guided, Full control, Full trust.
+8. Save profile.
 
-Arquivos:
-- AAAA-MM-DD_Descricao.ext
-- AAAA-QN_Descricao-vN.ext
-- Tipo-Descricao.ext
-- NF-AAAA-MM-NNN_Fornecedor.ext
+## Classification examples
 
-Regras universais:
-1. Sem espacos (excecao: number-dot-space para pastas de categoria)
-2. Hifens entre palavras
-3. ASCII safe: sem acentos, sem cedilha
-4. Sem ALLCAPS exceto siglas reais (NF, IR, CV)
-5. Versoes: -v1, -v2. Nunca FINAL, novo, copia
-6. Preservar extensao exatamente
-7. Colisao: -duplicata-1, -duplicata-2
-8. Windows: validar CON, PRN, AUX, NUL, COM1-COM9, LPT1-LPT9
-9. Nomes terminando em ponto ou espaco: FLAGGED
-10. Unicode nao-latino: FLAGGED, opcoes: manter, prefixar com data,
-    transliterar com confirmacao, renomear manualmente
-11. Transliteracoes sao aproximadas e nunca aplicadas sem aprovacao
-12. Legado-pre-organizacao: sem rename automatico
+| Item | Category | Reasoning |
+|------|----------|-----------|
+| Current tax return | Projects | Specific deadline |
+| Lease contract | Areas/Home | Ongoing responsibility |
+| Car manual | Areas/Vehicle | Ongoing reference for owned asset |
+| Template proposal | Resources/Templates | Reusable reference |
+| Old travel photos | Archive/Photos | Inactive |
+| SJJP attendance sheet | Areas/Work-SJJP | Ongoing program |
+| SJJP annual event plan | Projects | Has deadline |
+| ML course notes | Resources/ML | Learning material |
+| Completed renovation docs | Archive/Projects | Completed project |
 
-## Estrutura de pastas
+## Naming conventions
 
-Formato number-hyphen:
-- 1-Projetos, 2-Areas, 3-Recursos, 4-Arquivo
+### Folders
+- Projects: YYYY-MM_Descriptive-name (e.g., 2026-03_Kitchen-renovation)
+- Areas: Descriptive-name (e.g., Financas, Work-SJJP)
+- Resources: Descriptive-name (e.g., Templates, ML-tutorials)
+- Archive sub-folders: mirror original structure
+- Sub-folders within: NN_Name (e.g., 01_Orcamentos, 02_Contratos)
 
-Formato number-dot-space:
-- 1. Projetos, 2. Areas, 3. Recursos, 4. Arquivo
+### Files
+- YYYY-MM-DD_Description.ext (e.g., 2026-03-10_Tax-receipt.pdf)
+- Version: -v1, -v2 (never "FINAL" or "final-final")
+- Hyphens between words, no spaces.
+- ASCII safe: no accents in filenames (contrato, not contráto).
+- Preserve original extension exactly.
+- Collision: append -duplicata-N.
+- Windows: validate reserved names (CON, PRN, NUL, COM1-9, LPT1-9).
 
-Profundidade maxima: 3 niveis abaixo da raiz da categoria.
+### Unicode policy
+- Non-latin characters in filenames: FLAGGED for user decision.
+- Never auto-rename Unicode names. Report and ask.
+- If user approves transliteration, record original name in manifest.
 
-Exemplos validos:
-- 2-Areas/Financas-pessoais/Extratos-bancarios/
-- 1-Projetos/2026-03_Declaracao-IR/01_Briefing/
-- Trabalho/2-Areas/Clientes/Contratos/
+### Legacy-pre-organization
+- Files moved from unsorted sources keep original names.
+- No automatic rename on import. Rename only with explicit approval.
+- Legacy folder serves as triage holding area.
 
-Exemplo invalido:
-- 2-Areas/Financas-pessoais/Extratos-bancarios/2026/Janeiro/
+## Folder hierarchy example
 
-Estrutura interna de projeto:
-  01_Briefing/
-  02_Rascunhos/
-  03_Versao-final/
-  04_Feedback/
-  README.txt
+```
+~/Documents/PARA/
+  Work/
+    1-Projetos/
+      2026-01_SJJP-Evento-anual/
+        01_Planning/
+        02_Budget/
+        03_Photos/
+      2026-03_Server-migration/
+    2-Areas/
+      Trabalho-SJJP/
+        Attendance/
+        Staff/
+      Carreira/
+    3-Recursos/
+      Templates/
+      Tutorials/
+    4-Arquivo/
+      Projetos-concluidos/
+        2025-06_Office-renovation/
+      Duplicados/
+        2026-03-10/
 
-Estrutura interna de arquivo:
-  4-Arquivo/Projetos-concluidos/
-  4-Arquivo/Areas-inativas/
-  4-Arquivo/Legado-pre-organizacao/
+  Personal/
+    1-Projetos/
+    2-Areas/
+      Financas/
+      Familia/
+      Casa/
+    3-Recursos/
+    4-Arquivo/
+```
 
-## Politica de ambiguidade
+## Ambiguity handling
 
-Se varios arquivos tiverem padrao claro e mesma classificacao provavel,
-propor decisao em lote.
+When classification is unclear:
+1. Check profile aliases for keyword match.
+2. Check keyword analysis clusters.
+3. If still ambiguous, present options in triage session.
+4. If user chooses "decide later", move to Legacy-pre-organization.
+5. Batch similar decisions: "These 12 files all match 'SJJP'.
+   Treat all as Work-SJJP Area? (yes / review individually)"
 
-Exemplo lote:
-"Encontrei 17 PDFs de extrato bancario. Tratar todos como
-Pessoal/2-Areas/Financas-pessoais/Extratos-bancarios? (yes/no/revisar)"
+## Cross-category files
 
-Exemplo individual:
-"Encontrei Relatorio-Projeto-Alpha.pdf.
-(a) 1-Projetos, se ativo
-(b) 4-Arquivo/Projetos-concluidos, se terminou
-(c) 3-Recursos, se e referencia"
+A file belongs in ONE physical location. If it relates to multiple
+categories, the primary location is chosen by action priority
+(Project > Area > Resource > Archive). Additional associations are
+recorded as tags in the index (para-index.jsonl) for cross-search.
 
-Triagem rapida: itens incertos podem ir para Legado-pre-organizacao,
-com aprovacao explicita, sem rename.
+Example: lease contract lives in Areas/Home but is tagged
+["financas", "casa", "contrato"] in the index. Searching "financas"
+finds it even though it is physically in Areas/Home.

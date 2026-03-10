@@ -1,459 +1,487 @@
 ---
 name: file-organizer-para
 description: >-
-  Organiza arquivos e pastas no filesystem local usando a metodologia PARA
-  de Tiago Forte, com verificacao de dependencias, deteccao de duplicados,
-  plano antes da execucao, rollback e manutencao continua.
-  Triggers PT: "organizar meus arquivos", "limpar meu desktop",
-  "arquivar projetos antigos", "montar estrutura PARA",
-  "renomear meus arquivos", "organizar minha pasta de downloads",
-  "encontrar duplicados", "buscar duplicados", "tem arquivos repetidos?".
-  Triggers EN: "organize my files", "clean up my desktop", "archive old
-  projects", "set up PARA folders", "rename my files", "sort my downloads",
-  "find duplicates", "check for duplicates", "any repeated files?".
-user-invocable: true
+  Organizes local files and folders using Tiago Forte's PARA methodology
+  with dependency safety checks, duplicate detection, keyword analysis,
+  content analysis, media handling, execution planning, rollback, and
+  ongoing maintenance. Use when the user asks to organize files, clean up
+  folders, sort downloads, set up PARA structure, find duplicates, rename
+  files, archive old projects, or maintain an existing PARA setup.
+  Trigger phrases include: "organizar meus arquivos", "limpar meu desktop",
+  "organizar minha pasta de downloads", "encontrar duplicados",
+  "montar estrutura PARA", "organize my files", "clean up my desktop",
+  "sort my downloads", "find duplicates", "set up PARA folders",
+  "archive old projects", "rename my files", "any repeated files?",
+  "improve organization of [folder]", "refine [folder]".
+license: MIT
+compatibility: >-
+  Requires local filesystem read/write access. Works with any agent
+  that supports the Agent Skills standard (Claude Code, Codex CLI,
+  Gemini CLI, Antigravity, Cursor, OpenClaw). No MCP server required.
+  macOS, Linux, Windows, WSL.
 metadata:
-  author: Fernando Caravana
-  version: 10.0.0
-  tags:
-    - file-organization
-    - para-method
-    - productivity
-    - filesystem
-    - deduplication
+  author: "Fernando Caravana"
+  version: "11.0.0"
+  tags: "file-organization, para-method, productivity, filesystem, deduplication"
 ---
 
 # PARA File Organizer
 
-Organiza arquivos locais com a metodologia PARA de Tiago Forte.
-Nunca quebrar referencias, nunca mover sem verificacao, nunca executar
-sem aprovacao explicita.
+Organizes local files using Tiago Forte's PARA methodology.
+Never break references, never move without verification, never
+execute without explicit approval.
 
-Para definicoes completas do PARA, exemplos de classificacao e
-referencias metodologicas, ver [references/PARA-METHOD-REFERENCE.md].
+For complete PARA definitions, classification examples, naming
+conventions and methodological references, see
+[references/PARA-METHOD-REFERENCE.md].
 
-## 1. Principios operacionais
+## 1. Operational principles
 
-1. Preservar dados vem antes de organizar.
-2. Nunca mover, renomear ou arquivar sem plano e aprovacao.
-3. Nunca deletar arquivos do usuario.
-4. Em moves cross-filesystem, origem so e removida apos copy + verify.
-5. Aplicar PARA: Projetos, Areas, Recursos, Arquivo.
-6. Check impossivel = NOT_CHECKED. Nunca reportar OK sem verificar.
-7. O usuario decide. A skill recomenda.
-8. Usar o idioma do usuario.
-9. Toda execucao gera plano, manifesto, relatorio e rollback.
-10. Resolver inconsistencias entre disco, lock e manifesto antes de
-    qualquer escrita.
+1. Preserving data comes before organizing.
+2. Never move, rename or archive without plan and approval.
+3. Never delete user files.
+4. Cross-filesystem moves: remove origin only after copy + verify.
+5. Apply PARA: Projects, Areas, Resources, Archive.
+6. Impossible check = NOT_CHECKED. Never report OK without verifying.
+7. The user decides. The skill recommends.
+8. Use the user's language.
+9. Every execution produces plan, manifest, report and rollback.
+10. Resolve inconsistencies between disk, lock and manifest before
+    any write.
 
-## 2. Precedencia de regras
+## 2. Rule precedence
 
-1. Evitar perda de dados e quebra de dependencias
-2. Respeitar decisao explicita do usuario
-3. Preservar atomicidade de projetos de software
-4. Resolver riscos de dependencias e links
-5. Manter coerencia PARA
-6. Aplicar convencoes de nomes
-7. Limpeza e manutencao
+1. Avoid data loss and dependency breakage
+2. Respect explicit user decision
+3. Preserve software project atomicity
+4. Resolve dependency and link risks
+5. Maintain PARA coherence
+6. Apply naming conventions
+7. Cleanup and maintenance
 
-## 3. Escopo
+## 3. Scope
 
-- Apenas filesystem local.
-- Apenas capacidades disponiveis no runtime.
-- Ferramenta ausente = NOT_CHECKED.
-- Persistir estado em: ponteiro global, config da raiz, lock, manifesto.
-- Produzir: saida legivel, manifesto estruturado, rollback.
-- Artefatos internos (.para-config.json, .para-lock.json, .para-temp/,
-  .para-manifest-history/, para-manifest-*.json, para-rollback-*) nunca
-  entram em classificacao ou plano PARA.
-- Todos os artefatos de texto usam UTF-8 sem BOM.
+- Local filesystem only.
+- Only capabilities available in the runtime.
+- Missing tool = NOT_CHECKED.
+- Persist state in: global pointer, root config, lock, manifest, index.
+- Produce: human-readable output, structured manifest, rollback.
+- Internal artifacts (.para-config.json, .para-lock.json, .para-temp/,
+  .para-manifest-history/, para-manifest-*.json, para-rollback-*,
+  para-index.jsonl) never enter PARA classification or plan.
+- All text artifacts use UTF-8 without BOM.
 
-## 4. Capacidades
+## 4. Capabilities
 
-Classificar como SUPPORTED, BEST_EFFORT ou NOT_CHECKED.
+Classify as SUPPORTED, BEST_EFFORT or NOT_CHECKED.
 
-macOS/Linux: inventario, pastas, symlinks, hard links, configs com path
-absoluto = SUPPORTED. PATH, cron, launchd, systemd, Finder aliases,
-filesystem de rede, cloud placeholders, metadata avancada = BEST_EFFORT.
+macOS/Linux: inventory, folders, symlinks, hard links, configs with
+absolute path = SUPPORTED. PATH, cron, launchd, systemd, Finder
+aliases, network filesystem, cloud placeholders, EXIF metadata,
+audio/video metadata = BEST_EFFORT.
 
-Windows: inventario, pastas = SUPPORTED. Symlinks, hard links, .lnk,
-schtasks, registry PATH, cloud placeholders, ADS, ACLs = BEST_EFFORT.
+Windows: inventory, folders = SUPPORTED. Symlinks, hard links, .lnk,
+schtasks, registry PATH, cloud placeholders, ADS, ACLs, EXIF,
+audio/video metadata = BEST_EFFORT.
 
-WSL: filesystem Linux e /mnt = SUPPORTED. Registry, .lnk, schtasks =
-NOT_CHECKED salvo bridge disponivel.
+WSL: Linux filesystem and /mnt = SUPPORTED. Registry, .lnk,
+schtasks = NOT_CHECKED unless bridge available.
 
-Regra dura: nunca afirmar que Finder, registry, Dock, sidebar, schtasks
-ou atalhos foram checados se a ferramenta real nao confirmou.
+Hard rule: never claim Finder, registry, Dock, sidebar, schtasks
+or shortcuts were checked unless the actual tool confirmed it.
 
-## 5. Estado e persistencia
+## 5. State and persistence
 
-Ponteiro global:
+Global pointer:
 - macOS/Linux: ~/.config/openclaw/para-root.json
 - Windows: %APPDATA%/OpenClaw/para-root.json
 
-Config da raiz: <root>/.para-config.json
-- mode: "single" (trees=[]) ou "separate" (trees com >= 2 nomes unicos)
-- categoryFolderFormat: "number-hyphen" ou "number-dot-space"
+Root config: <root>/.para-config.json
+- mode: "single" (trees=[]) or "separate" (trees with >= 2 unique names)
+- categoryFolderFormat: "number-hyphen" or "number-dot-space"
 - maxDepthBelowCategoryRoot: 3
-- Alertar se trees > 5 (estrutura dispersa)
+- Alert if trees > 5 (dispersed structure)
+- profile: areas, activeProjects, resources with aliases and keywords
 
-Para schema completo do config, lock e manifesto, ver
+Searchable index: <root>/para-index.jsonl
+- One JSON line per organized file.
+- Fields: path, originalPath, hash, tags, category, area, project,
+  description, correspondent, customMetadata, organizedAt, executionId.
+- Used for traceability, cross-location dedup and semantic search.
+
+For complete config, lock, manifest and index schemas, see
 [references/MANIFEST-SCHEMA.md].
 
-## 6. Root directory setup (Passo 0)
+## 6. Operation modes
 
-O usuario pode:
-(a) especificar o root explicitamente ("root em ~/Documents/PARA"),
-(b) especificar apenas a pasta-fonte, sem indicar root,
-(c) delegar a decisao ("escolhe o melhor lugar" / "you decide").
+Detected automatically based on source vs root relationship:
 
-Para (a): validar existencia, permissao de escrita e espaco. Usar
-o caminho exato fornecido.
+(a) Import: source outside root PARA. Full workflow. Default.
+(b) Refine: source inside root PARA. Reorganization of already
+    organized content. Skips root setup and structure creation.
+    Focuses on: sub-folder improvement, cross-category moves,
+    name standardization, internal dedup, tag enrichment.
+(c) Maintain: source = root. General review, stale item detection,
+    periodic cleanup. See Section 24.
 
-Para (b): perguntar onde o root deve ficar. Sugerir valor padrao
-por SO (ver abaixo). Aceitar resposta ou alternativa.
+The user can also request a mode explicitly.
 
-Para (c): aplicar heuristica:
-1. Se ponteiro global existe e tem activeRoot valido, propor esse.
-2. Caso contrario, propor por SO:
+## 7. Root directory setup (Step 0)
+
+The user may:
+(a) specify the root explicitly ("root at ~/Documents/PARA"),
+(b) specify only the source folder without indicating root,
+(c) delegate the decision ("you decide" / "escolhe o melhor lugar").
+
+For (a): validate existence, write permission and space. Use the
+exact path provided.
+
+For (b): ask where the root should be. Suggest default by OS.
+Accept response or alternative.
+
+For (c): apply heuristic:
+1. If global pointer exists with valid activeRoot, propose it.
+2. Otherwise propose by OS:
    - macOS: ~/Documents/PARA
-   - Linux: ~/Documents/PARA ou ~/PARA se Documents nao existe
+   - Linux: ~/Documents/PARA or ~/PARA if Documents missing
    - Windows: %USERPROFILE%\Documents\PARA
-3. Mostrar proposta e AGUARDAR confirmacao explicita.
-   Nunca criar root sem "yes" ou equivalente.
+3. Show proposal and WAIT for explicit confirmation.
 
-Validacao obrigatoria (todos os cenarios):
-- Caminho existe ou pode ser criado.
-- Permissao de escrita confirmada.
-- Espaco livre >= diskSafetyMarginPercent.
-- Caminho nao esta dentro de diretorio de sistema (/System, /Library,
-  /usr, /bin, /sbin, C:\Windows, C:\Program Files).
-- Caminho nao esta dentro de .git, node_modules ou similar.
+Mandatory validation (all scenarios):
+- Path exists or can be created.
+- Write permission confirmed.
+- Free space >= diskSafetyMarginPercent.
+- Path not inside system directory (/System, /Library, /usr,
+  C:\Windows, C:\Program Files).
+- Path not inside .git, node_modules or similar.
 
-Primeira execucao:
-1. Detectar SO e diretorios comuns (home, Desktop, Documents, Downloads).
-2. Resolver root conforme cenario (a), (b) ou (c).
-3. Perguntar: arvore unica ou separada? Quais arvores?
-4. Perguntar formato: number-hyphen ou number-dot-space.
-5. Verificar existencia e permissao de escrita.
-6. Criar root, .para-manifest-history/, .para-temp/.
-7. Salvar ponteiro global e config.
+## 8. Onboarding profile (Step 0 continued)
 
-Execucoes futuras:
-1. Ler ponteiro e config.
-2. Checar lock (Secao 8).
-3. Checar manifestos incompletos, ver [references/ROLLBACK-AND-RECOVERY.md].
-4. Mostrar config atual. Perguntar: "Continuar? (yes / change)"
+First execution, after root is defined:
 
-Formato misto detectado (ex: 1-Projetos junto com 2. Areas):
-1. Listar pastas encontradas e formato de cada uma.
-2. Perguntar: (a) padronizar para formato configurado, (b) adotar o mais
-   comum, (c) manter.
-3. Se padronizar, gerar plano de rename com confirmacao.
+Present default areas and ask the user to adjust:
+Health, Finances, Career, Family, Home, Personal Development,
+Hobbies, Work.
 
-## 7. Negociacao do source (Passo 1)
+For each item the user mentions, ask:
+"Does [item] have an end date or is it ongoing?"
+- Ongoing = Area.
+- Has deadline = Project.
+- Ongoing with sub-projects = Area with subProjects.
 
-Distinguir root PARA (destino) de source directory (origem).
-- Caminho explicito: validar existencia e acessibilidade.
-- "desktop"/"downloads"/"documents": detectar automaticamente.
-- Generico: perguntar qual diretorio.
-- Nunca assumir source sem confirmacao.
-- Validar leitura no source. Sem leitura = abortar.
-- Validar escrita no source quando necessario. Sem escrita = oferecer
-  copy_only.
+Then ask about active projects and resource topics.
 
-Protecao contra sobreposicao:
-- Root dentro de source: excluir root do scan.
-- Source = root: tratar como manutencao, nao importacao.
-- Source dentro de root: tratar como reorganizacao interna.
-- Impedir recursion e auto-encaixe.
+Store in .para-config.json under "profile" with aliases and
+keywords per item. Aliases feed Keyword Analysis (Step 2.3).
 
-## 8. Lock de execucao
+Interaction mode selection:
+(a) Guided: agent decides high-confidence items, asks the rest.
+(b) Full control: agent asks every decision.
+(c) Full trust: agent decides everything, shows final plan.
 
-Criar <root>/.para-lock.json antes de qualquer escrita.
-Atualizar heartbeat: a cada operacao ou a cada 60s, o que vier primeiro.
-Stale: updatedAt > heartbeatTimeoutMinutes. Duracao total longa = alerta,
-nao stale.
-Lock nao criavel (permissao, disco cheio) = abortar, nunca executar sem lock.
-Reconciliacao: exigir coerencia de executionId, manifestPath, root e
-source entre lock e manifesto.
-Remover lock apenas em: sucesso, rollback concluido, abort seguro.
+Subsequent executions: load profile, ask "Changed anything since
+last time?" If yes, update. If no, proceed.
 
-Para schema completo do lock, ver [references/MANIFEST-SCHEMA.md].
+For profile schema and examples, see [references/PARA-METHOD-REFERENCE.md].
 
-## 9. Workflow obrigatorio
+## 9. Source negotiation (Step 1)
 
-Passo 0. Setup - ler config, checar lock, checar manifestos incompletos.
-Passo 1. Source - negociar origem, validar permissoes, checar sobreposicao.
-Passo 2. Discover - escanear, contar, excluir root se dentro do source,
-  excluir artefatos internos, nunca seguir symlinks recursivamente.
-  >10.000 itens: pausar e perguntar. >10 min: pausar.
-Passo 2.5. Deduplication (opcional) - detectar duplicados conforme modo
-  de scan ou pedido explicito. Apresentar relatorio, aguardar decisao.
-  Ver [references/DUPLICATE-DETECTION.md].
-Passo 3. Dependency check - rodar conforme modo (Quick/Safe/Deep),
-  gerar dependency report, resolver flagged.
-  Ver [references/DEPENDENCY-CHECKS.md].
-Passo 4. Plan - propor destino, indicar rename, confianca, dependencia.
-  Agrupar decisoes repetidas. Ver Secao 11 (Planejamento).
-Passo 5. Confirm - mostrar resumo do plano. Nunca executar sem "yes".
-  Ver Secao 12 (Confirmacao).
-Passo 6. Execute - criar lock, criar manifesto, criar estrutura PARA,
-  mover/copiar com verificacao, renomear, atualizar configs aprovados,
-  registrar cada operacao no manifesto, atualizar heartbeat.
-  Ver [references/EXECUTION-STRATEGY.md].
-Passo 7. Verify - confirmar existencia no destino, ausencia na origem
-  quando aplicavel, validar config edits, preencher completedAt.
-Passo 8. Report - relatorio completo, checklist manual, rollback,
-  remover lock, perguntar se quer ajustes.
+Distinguish root PARA (destination) from source directory (origin).
+- Explicit path: validate existence and accessibility.
+- "desktop"/"downloads"/"documents": detect automatically.
+- Generic: ask which directory.
+- Never assume source without confirmation.
+- Validate read on source. No read = abort.
+- Validate write on source when needed. No write = offer copy_only.
 
-## 10. Classificacao PARA
+Overlap protection:
+- Root inside source: exclude root from scan.
+- Source = root: treat as Maintain mode.
+- Source inside root: treat as Refine mode.
+- Prevent recursion and self-nesting.
 
-Arvore de decisao:
-1. Resultado especifico com prazo? -> 1-Projetos
-2. Responsabilidade continua? -> 2-Areas
-3. Referencia ou aprendizado? -> 3-Recursos
-4. Inativo ou encerrado? -> 4-Arquivo
+## 10. Execution lock
 
-Se baixa confianca para Trabalho vs Pessoal, perguntar.
-Se ambiguo, propor lote ou triagem para Legado-pre-organizacao.
+Create <root>/.para-lock.json before any write.
+Update heartbeat: every operation or every 60s, whichever comes first.
+Stale: updatedAt > heartbeatTimeoutMinutes. Long total duration =
+alert, not stale.
+Lock not creatable (permission, disk full) = abort, never execute
+without lock.
+Reconciliation: require coherence of executionId, manifestPath,
+root and source between lock and manifest.
+Remove lock only on: success, rollback completed, safe abort.
 
-Para definicoes detalhadas, exemplos concretos e referencia a Tiago
-Forte, ver [references/PARA-METHOD-REFERENCE.md].
+## 11. Mandatory workflow
 
-## 11. Planejamento
+Step 0.  Setup: read config, check lock, check incomplete manifests,
+         onboarding profile (first run or if user requests update).
+Step 1.  Source: negotiate origin, validate permissions, detect
+         operation mode (Import/Refine/Maintain).
+Step 2.  Discover: scan, count, exclude root if inside source,
+         exclude internal artifacts, never follow symlinks recursively.
+         >10,000 items: pause and ask. >10 min: pause.
+Step 2.2 Media Detection: identify images, videos, screenshots,
+         audio. Extract EXIF/metadata when tools available.
+         See [references/MEDIA-HANDLING.md].
+Step 2.3 Keyword Analysis: tokenize filenames, cluster by recurring
+         tokens, cross-reference with profile aliases.
+         See [references/KEYWORD-AND-CONTENT-ANALYSIS.md].
+Step 2.4 Content Analysis (opt-in): read content of ambiguous files
+         to improve classification. Three levels (0/1/2).
+         See [references/KEYWORD-AND-CONTENT-ANALYSIS.md].
+Step 2.5 Deduplication (optional): detect duplicates by scan mode
+         or explicit request. Present report, wait for decision.
+         See [references/DUPLICATE-DETECTION.md].
+Step 2.6 Triage Session: present all accumulated uncertainties
+         grouped by type. User resolves before planning.
+Step 3.  Dependency check: run per mode (Quick/Safe/Deep), generate
+         report, resolve flagged items.
+         See [references/DEPENDENCY-CHECKS.md].
+Step 4.  Plan: propose destination, indicate rename, confidence,
+         dependency. Group repeated decisions. See Section 13.
+Step 5.  Confirm: show plan summary. Never execute without "yes".
+         See Section 14.
+Step 6.  Execute: create lock, manifest, PARA structure, move/copy
+         with verification, rename, update approved configs, record
+         each operation, update heartbeat, update index.
+         See [references/EXECUTION-STRATEGY.md].
+Step 7.  Verify: confirm existence at destination, absence at origin
+         when applicable, validate config edits, fill completedAt.
+Step 8.  Report: full report, manual checklist, rollback script,
+         update PARA-CHANGELOG.md, remove lock, ask for adjustments.
 
-Tabela obrigatoria:
+## 12. PARA classification
 
-| # | Origem | Destino | Acao | Escopo | Confianca | Dependencia |
-|---|--------|---------|------|--------|-----------|-------------|
+Decision tree:
+1. Specific result with deadline? -> 1-Projetos / 1-Projects
+2. Ongoing responsibility? -> 2-Areas
+3. Reference or learning? -> 3-Recursos / 3-Resources
+4. Inactive or completed? -> 4-Arquivo / 4-Archive
 
-Acoes: Move, Move+Rename, Copy+Verify+Remove, Copy_only, Skip,
-  Ask user, Archive-duplicate
-Confianca: Alta, Media, Baixa
-Dependencia: No, Yes:<tipo>, NOT_CHECKED:<tipo>
+Profile areas and aliases boost classification confidence.
+Low confidence for Work vs Personal: ask.
+Ambiguous: propose batch or triage to Legacy-pre-organization.
 
-Resumo: pastas a criar, itens a mover, renomear, copy+verify, copy_only,
-dependencias resolvidas, pulados, ambiguos, NOT_CHECKED, duplicados
-encontrados e acao escolhida.
+For detailed definitions and examples, see
+[references/PARA-METHOD-REFERENCE.md].
 
-## 12. Confirmacao
+## 13. Planning
 
-Mostrar antes de executar:
+Required table:
 
-PLANO DE ORGANIZACAO PARA
-- Source, Root, Scan mode
-- Pastas a criar: N
-- Itens a mover: N, a renomear: N, copy+verify: N, copy_only: N
-- Pulados: N, ambiguos: N, NOT_CHECKED: N
-- Cross-filesystem: N, network: N, dependencias: N
-- Duplicados: N grupos, N arquivos, N bytes recuperaveis
-- Espaco necessario vs disponivel
-- Batch write: sim/nao
+| # | Origin | Destination | Action | Scope | Confidence | Dependency |
+|---|--------|-------------|--------|-------|------------|------------|
+
+Actions: Move, Move+Rename, Copy+Verify+Remove, Copy_only, Skip,
+  Ask user, Archive-duplicate, Refine-move (for Refine mode).
+Confidence: High, Medium, Low.
+Dependency: No, Yes:<type>, NOT_CHECKED:<type>.
+
+Summary: folders to create, items to move, rename, copy+verify,
+copy_only, dependencies resolved, skipped, ambiguous, NOT_CHECKED,
+duplicates found and action chosen.
+
+## 14. Confirmation
+
+Show before executing:
+
+PARA ORGANIZATION PLAN
+- Source, Root, Mode (Import/Refine/Maintain), Scan mode
+- Folders to create: N
+- Items to move: N, rename: N, copy+verify: N, copy_only: N
+- Skipped: N, ambiguous: N, NOT_CHECKED: N
+- Cross-filesystem: N, network: N, dependencies: N
+- Duplicates: N groups, N files, N bytes recoverable
+- Media: N images, N videos, N audio, N screenshots
+- Space required vs available
+- Batch write: yes/no
 
 "Proceed? (yes / no / show details / edit)"
 
-## 13. Convencoes de nomes
+## 15. Naming conventions
 
-Pastas: AAAA-MM_Nome (projetos), Nome-descritivo (areas/recursos),
-NN_Nome (subpastas).
-Arquivos: AAAA-MM-DD_Descricao.ext, versao -v1/-v2, nunca FINAL.
-Hifens entre palavras, ASCII safe (sem acentos), preservar extensao.
-Colisao: -duplicata-N. Windows: validar nomes reservados (CON, PRN, etc).
-Unicode nao-latino: FLAGGED, nunca renomear automaticamente.
-Legado-pre-organizacao: sem rename automatico.
+Folders: YYYY-MM_Name (projects), Descriptive-name (areas/resources),
+NN_Name (subfolders).
+Files: YYYY-MM-DD_Description.ext, version -v1/-v2, never FINAL.
+Hyphens between words, ASCII safe, preserve extension.
+Collision: -duplicata-N. Windows: validate reserved names.
+Non-latin Unicode: FLAGGED, never auto-rename.
+Legacy-pre-organization: no automatic rename.
 
-Para convencoes completas, ver [references/PARA-METHOD-REFERENCE.md].
+For complete conventions, see [references/PARA-METHOD-REFERENCE.md].
 
-## 14. Modos de scan
+## 16. Scan modes
 
-Quick: inventario, tamanhos, grandes, symlinks.
-  Duplicados: desligado. Agente oferece ativar.
-Safe (padrao): + projetos software, hard links, configs, bloqueios,
-  cross-fs, espaco, permissoes, rede, cloud, metadata.
-  Duplicados: fase 1 (agrupamento por tamanho). Se candidatos,
-  perguntar se quer hash para confirmar.
-Deep: + PATH, shell rc, atalhos, scheduled tasks.
-  Duplicados: fase 1 + fase 2 (hash) automatico.
-Se origem parecer dev/automacao, recomendar Deep.
+Quick: inventory, sizes, large files, symlinks.
+  Duplicates: off. Agent offers to enable.
+  Content analysis: off.
+Safe (default): + software projects, hard links, configs, locks,
+  cross-fs, space, permissions, network, cloud, metadata.
+  Duplicates: phase 1 (size grouping). If candidates, ask for hash.
+  Content analysis: level 0.
+Deep: + PATH, shell rc, shortcuts, scheduled tasks.
+  Duplicates: phase 1 + phase 2 (hash) automatic.
+  Content analysis: level 1 for low-confidence items.
+If source appears dev/automation, recommend Deep.
 
-Para algoritmo completo de deteccao de duplicados, ver
-[references/DUPLICATE-DETECTION.md].
-
-## 15. Ignore
+## 17. Ignore
 
 Standalone: .DS_Store, thumbs.db, desktop.ini, .Spotlight-V100, etc.
-Internos: .para-config.json, .para-lock.json, .para-manifest-history/,
-  .para-temp/, para-manifest-*.json, para-rollback-*.
-Ocultos: nao mover isoladamente, inspecionar em dependency check.
-Projetos software: .git, node_modules, .venv, etc = mover so com pai.
-.env: nunca ignore para dependencia.
+Internal: .para-config.json, .para-lock.json, .para-manifest-history/,
+  .para-temp/, para-manifest-*.json, para-rollback-*, para-index.jsonl,
+  PARA-CHANGELOG.md.
+Hidden: do not move in isolation, inspect in dependency check.
+Software projects: .git, node_modules, .venv, etc = move only with parent.
+.env: never ignore for dependency check.
 
-## 16. Dependency check
+## 18. Dependency check
 
-Obrigatorio antes do plano. Status: OK, FLAGGED, NOT_CHECKED, ERROR.
+Mandatory before plan. Status: OK, FLAGGED, NOT_CHECKED, ERROR.
 
-Checks principais:
-- Symlinks: FLAGGED, nunca seguir recursivamente
-- Hard links: FLAGGED se cross-filesystem
-- Projetos software: mover atomicamente, nunca extrair internos
-- Configs com path absoluto: FLAGGED, mascarar segredos
-- Cloud boundary e placeholders: FLAGGED
-- Arquivos >1GB, read-only, em uso: FLAGGED
-- Cross-filesystem: obriga copy+verify+remove
-- Espaco: margem = max(percent, minBytes)
-- Case-collision, path length, nomes reservados: FLAGGED
-- Permissoes: FLAGGED se insuficientes
-- Filesystem de rede: FLAGGED, nao confiar em rename atomico
-- Hash obrigatorio quando suportado para: >=1GB, rede, databases,
-  executaveis, compactados, configs sensiveis, falhas previas
+Main checks: symlinks, hard links, software projects, configs with
+absolute path, cloud boundary, files >1GB, read-only, in-use,
+cross-filesystem, space, case-collision, path length, reserved names,
+permissions, network filesystem, hash when required.
 
-Para lista completa de checks, heuristicas e opcoes por tipo de flag,
-ver [references/DEPENDENCY-CHECKS.md].
+For complete check list and options, see
+[references/DEPENDENCY-CHECKS.md].
 
-## 17. Deteccao de duplicados
+## 19. Folder handling rules
 
-Duplicado exato: dois ou mais arquivos com hash SHA-256 identico,
-independente de nome, localizacao ou data.
+In order of precedence:
+1. Software project markers detected: move folder as atomic unit.
+2. Keyword/content analysis shows cohesive group: suggest moving
+   whole folder. Ask user to confirm.
+3. Mixed content detected: ask user: (a) classify individually,
+   (b) move whole folder to one destination, (c) skip folder.
+4. Empty folder: report, do not move. Ask if user wants to delete.
+5. Single file inside folder: suggest moving the file, not wrapper.
 
-Duplicado provavel: mesmo tamanho + mesma extensao + nome similar
-(Levenshtein <= 3), hash diferente. Somente reportado, sem acao
-automatica.
+## 20. Duplicate detection
 
-Algoritmo em duas fases:
-- Fase 1: agrupar por tamanho. Descartar grupos com um membro.
-- Fase 2: hash dos candidatos. Arquivos >100 MB usam hash parcial
-  (primeiros + ultimos 64 KB) como pre-filtro.
+Exact duplicate: identical SHA-256 hash regardless of name or location.
+Probable duplicate: same size + same extension + similar name
+(Levenshtein <= 3), different hash. Report only.
 
-Integracao com scan modes: ver Secao 14.
+Two-phase algorithm: size grouping then hash comparison.
+Integration with scan modes: see Section 16.
+Available as workflow step (2.5) and on-demand command (Section 23).
 
-Acoes disponiveis por grupo (sempre com aprovacao):
-- archive-duplicates: mover para 4-Arquivo/Duplicados/AAAA-MM-DD/
-- keep-all: nenhuma acao, todos seguem para planejamento PARA
-- swap-keep: usuario escolhe qual manter
-- skip-group: ignorar grupo
+For complete algorithm, report format, manifest schema, performance
+guidelines and safety rules, see [references/DUPLICATE-DETECTION.md].
 
-Heuristica para sugerir [MANTER]:
-1. Arquivo dentro de estrutura PARA > arquivo fora
-2. Data de modificacao mais recente > mais antiga
-3. Caminho mais curto > mais longo
-4. Nome original (sem "(1)", "-copia") > nome modificado
-Usuario pode alterar qualquer sugestao.
+## 21. Execution
 
-Comando on-demand: ver Secao 22.
+Same-filesystem local: native rename (except: network, cloud boundary,
+  hard links preserving count, explicit copy+verify request).
+Cross-filesystem: copy -> verify (size + hash when required) ->
+  remove origin. Verification failure = keep origin.
+Collision: -duplicata-N, never overwrite.
+Config edits: .bak backup before, validate syntax after.
+Software projects: entire folder as unit.
+Atomic write: temp file -> flush/fsync -> rename.
+Batch write: after batchWriteThreshold, write in batchWriteSize lots.
+Network: never trust rename, always copy+verify+remove.
+Index update: after each successful operation, append line to
+  para-index.jsonl with file metadata, tags and category.
+PARA-CHANGELOG.md: append execution summary after completion.
 
-Cross-location: quando root PARA existe e usuario roda dedup avulso,
-comparar hashes do source contra historico de manifestos para detectar
-arquivos ja organizados.
+For complete strategy, see [references/EXECUTION-STRATEGY.md].
 
-Regras de seguranca: nunca deletar, nunca agir em provaveis sem
-aprovacao, sempre mostrar relatorio antes de qualquer acao, manifestar
-cada operacao para rollback.
+## 22. Manifest
 
-Para algoritmo completo, formato de relatorio, schema de manifesto,
-performance e edge cases, ver [references/DUPLICATE-DETECTION.md].
+Every execution generates JSON manifest (schemaVersion 8).
+Operations: type (move/copy/copy_only/deduplicate/refine-move),
+status (planned -> in_progress -> copied -> verified ->
+source_removed -> completed / failed / rolled_back).
+Rename is attribute (renamed=true), not type.
+Local move via rename: planned -> completed (intentional).
+completedAt only when all operations finish.
+Deduplicate: records kept, archived, groupHash.
+Index: para-index.jsonl updated per operation for traceability.
 
-## 18. Execucao
-
-Same-filesystem local: rename nativo (exceto: rede, cloud boundary,
-  hard links preservando count, pedido explicito de copy+verify).
-Cross-filesystem: copy -> verify (tamanho + hash quando exigido) ->
-  remove origem. Falha na verificacao = manter origem.
-Colisao: -duplicata-N, nunca sobrescrever.
-Config edits: backup .bak-AAAA-MM-DD-HHMM antes, validar sintaxe depois.
-Projetos software: pasta inteira como unidade.
-Escrita atomica: temp file -> flush/fsync -> rename.
-Batch write: apos batchWriteThreshold, gravar em lotes de batchWriteSize.
-Rede: nunca confiar em rename, sempre copy+verify+remove.
-Metadata: preserved (rename local), best_effort (copy), not_checked.
-
-Para estrategia completa, precaucoes e edge cases, ver
-[references/EXECUTION-STRATEGY.md].
-
-## 19. Manifesto
-
-Toda execucao gera manifesto JSON (schemaVersion 7).
-Operacoes: type (move/copy/copy_only/deduplicate), status (planned ->
-  in_progress -> copied -> verified -> source_removed -> completed /
-  failed / rolled_back).
-Rename e atributo (renamed=true), nao tipo.
-Move local via rename: planned -> completed (intencional, rename e atomico).
-completedAt so quando todas as operacoes terminarem.
-Deduplicate: registra kept (path + hash), archived (lista com source,
-  destination, hash, bytes, verification), groupHash e timestamp.
-
-Para schema JSON completo e regras de estado, ver
+For complete JSON schema and state rules, see
 [references/MANIFEST-SCHEMA.md].
 
-## 20. Falha durante execucao
+## 23. On-demand commands
 
-Individual: marcar failed, gravar manifesto, perguntar retry/skip/pause/abort.
-Sistemica (3+ consecutivas): pausar automaticamente, perguntar.
-Critica (filesystem inacessivel): gravar best-effort, manter lock.
-Config edit: oferecer restauracao do backup, adicionar ao checklist.
+- "new project" / "novo projeto": create folder with recommended subs.
+- "new area" / "nova area": create area folder.
+- "archive project" / "arquivar projeto": move to Archive.
+- "maintenance" / "manutencao": run periodic review.
+- "PARA status" / "status PARA": show config and counts.
+- "find duplicates" / "encontrar duplicados": run duplicate detection
+  independently. Works even without configured root.
+  See [references/DUPLICATE-DETECTION.md].
+- "where was [name]?" / "onde estava [nome]?": search all manifests
+  and index for file history. Partial name match supported.
+- "trace [name]" / "rastrear [nome]": show full trajectory of a file
+  across all executions.
+- "update areas" / "atualizar areas": modify onboarding profile.
+- "refine [folder]" / "melhorar [pasta]": enter Refine mode for a
+  specific folder inside the PARA root.
+- "watch [folder]": enable watch mode for a folder. Agent reports
+  new files periodically and suggests classification.
 
-## 21. Rollback
+For details, see [references/MAINTENANCE-AND-COMMANDS.md].
 
-Ordem inversa das operacoes concluidas.
-move: mover de volta, restaurar nome se renamed.
-copy: se source existe, remover destination. Se nao, mover de volta.
-copy_only: remover destination (source intacto).
-deduplicate: mover arquivos arquivados de volta para localizacao original.
-configEdits: restaurar backup.
-Colisao no rollback: nunca sobrescrever, usar -rollback-collision-N.
-Pastas criadas: remover apenas se vazias.
-Rollback parcial: registrar, continuar, marcar partial.
-Script .sh/.ps1 gerado apos cada execucao.
-Rollback interativo disponivel via skill.
+## 24. Maintenance
 
-Para procedimentos completos de recovery e rollback, ver
-[references/ROLLBACK-AND-RECOVERY.md].
+Weekly (5 min): inactive projects >30 days, suggest archiving.
+Monthly (15 min): areas/resources unchanged >90 days, suggest review.
+Check Legacy-pre-organization. Re-run dependency check if relevant.
+Re-run duplicate detection on high-turnover folders if user accepts.
+Suggest index reindex for enriching descriptions of older entries.
 
-## 22. Comandos on-demand
+## 25. Failure during execution
 
-- "novo projeto" / "new project": criar pasta com subpastas recomendadas.
-- "nova area" / "new area": criar pasta de area.
-- "arquivar projeto" / "archive project": mover para Arquivo.
-- "manutencao" / "maintenance": rodar revisao periodica.
-- "status PARA" / "PARA status": mostrar config e contagens.
-- "encontrar duplicados" / "find duplicates": rodar deteccao de duplicados
-  independente do workflow PARA. Funciona mesmo sem root configurado.
-  Se root existe, compara source contra PARA para detectar arquivos ja
-  organizados. Ver [references/DUPLICATE-DETECTION.md].
+Individual: mark failed, write manifest, ask retry/skip/pause/abort.
+Systemic (3+ consecutive): auto-pause, ask.
+Critical (filesystem inaccessible): write best-effort, keep lock.
+Config edit: offer backup restore, add to checklist.
 
-Para detalhes de cada comando e rotinas de manutencao, ver
-[references/MAINTENANCE-AND-COMMANDS.md].
+## 26. Rollback
 
-## 23. Relatorio
+Reverse order of completed operations.
+move: move back, restore name if renamed.
+copy: if source exists, remove destination. If not, move back.
+copy_only: remove destination (source intact).
+deduplicate: move archived files back to original location.
+refine-move: move back to previous location within PARA.
+configEdits: restore backup.
+Collision on rollback: never overwrite, use -rollback-collision-N.
+Created folders: remove only if empty.
+Partial rollback: record, continue, mark partial.
+Script .sh/.ps1 generated after each execution.
+Interactive rollback available via skill.
+
+For complete procedures, see [references/ROLLBACK-AND-RECOVERY.md].
+
+## 27. Report
 
 PARA FILE ORGANIZER - REPORT
-Data, Execution ID, Source, Root, Mode, Scan Mode, Format.
-STATUS HONESTO: concluidas, puladas, falhadas, NOT_CHECKED.
+Date, Execution ID, Source, Root, Mode, Scan Mode, Format.
+HONEST STATUS: completed, skipped, failed, NOT_CHECKED.
 Metadata: preserved, best_effort, not_checked, failed.
-Batch write: status e indices.
-Secoes: estrutura criada, arquivos movidos/renomeados, config edits,
-dependencias resolvidas, duplicatas encontradas e acao tomada,
-ambiguos, pulados, NOT_CHECKED, erros, estatisticas, rollback info,
-checklist manual.
+Sections: structure created, files moved/renamed, config edits,
+dependencies resolved, duplicates found and action taken,
+media organized, keyword clusters used, ambiguous, skipped,
+NOT_CHECKED, errors, statistics, rollback info, manual checklist.
 
-Checklist manual pos-move: salvo como
-<root>/para-manual-checklist-AAAA-MM-DD-HHMM.md.
+Manual post-move checklist saved as
+<root>/para-manual-checklist-YYYY-MM-DD-HHMM.md.
 
-## 24. Manutencao
+PARA-CHANGELOG.md appended with execution summary.
 
-Semanal (5 min): projetos inativos >30 dias -> sugerir arquivar.
-Mensal (15 min): areas/recursos sem modificacao >90 dias -> sugerir.
-Verificar Legado-pre-organizacao. Re-rodar dependency check se relevante.
-Re-rodar deteccao de duplicados em pastas de alta rotatividade
-(Downloads, Desktop) se usuario aceitar.
+## 28. Edge cases
 
-## 25. Edge cases
+Empty folders, files without extension, circular symlinks, ambiguous
+encoding, >10GB, >10,000 items in one folder, files in use, corrupted
+manifest, revoked permissions, exhausted space, cloud sync conflicts,
+unknown or old manifest schema, duplicates with hard links (same
+inode = not duplicate, report as hard link), Refine mode moving files
+between PARA categories, watch mode detecting rapid file creation.
 
-Pastas vazias, arquivos sem extensao, circular symlinks, encoding
-ambiguo, >10GB, >10.000 itens numa pasta, arquivos em uso, manifesto
-corrompido, permissoes revogadas, espaco esgotado, cloud sync conflitos,
-schema de manifesto desconhecido ou antigo, duplicados com hard links
-(mesmo inode = nao duplicado, reportar como hard link).
-
-Para tratamento detalhado de cada caso, ver
-[references/ROLLBACK-AND-RECOVERY.md] e [references/EXECUTION-STRATEGY.md].
+For detailed handling, see [references/ROLLBACK-AND-RECOVERY.md]
+and [references/EXECUTION-STRATEGY.md].

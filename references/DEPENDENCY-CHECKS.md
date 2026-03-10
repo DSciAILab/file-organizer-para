@@ -1,187 +1,115 @@
 # Dependency Checks Reference
 
-## Status possiveis
+## When to run
 
-- OK
-- FLAGGED
-- NOT_CHECKED
-- ERROR
+Mandatory before any plan (Step 3). Scope depends on scan mode.
 
-## Symlinks (18.1)
+## Status values
 
-- Detectar links simbolicos no escopo.
-- Qualquer symlink = FLAGGED.
-- Fora do escopo = risco adicional.
-- Link relativo = risco maior ao mover.
-- Symlinks relativos dentro da mesma pasta pai = risco menor se mover
-  a pasta inteira.
-- REGRA DURA: nunca seguir symlinks recursivamente. Registrar como
-  item, nunca expandir conteudo.
+- OK: checked and safe to move.
+- FLAGGED: checked and risk found. Requires user decision.
+- NOT_CHECKED: tool unavailable or check impossible. Never report OK.
+- ERROR: check failed unexpectedly.
 
-Opcoes: (1) Pular, (2) Mover como link sem alterar target,
-(3) Resolver manualmente depois.
+## Check list by scan mode
 
-## Hard links (18.2)
+### Quick
+- File inventory with sizes.
+- Files > 1GB: FLAGGED.
+- Symlinks detected: FLAGGED.
 
-- Detectar link count > 1.
-- Cross-filesystem = FLAGGED.
-- Mesmo filesystem = risco menor.
+### Safe (default, includes Quick)
+- Software project markers: .git, package.json, Cargo.toml, go.mod,
+  .sln, .xcodeproj, Makefile, setup.py, pyproject.toml, .venv,
+  node_modules, composer.json, Gemfile, pom.xml, build.gradle.
+  -> Move atomically. Never extract internals.
+- Hard links (nlink > 1): FLAGGED. Cross-filesystem = forced copy.
+- Config files with absolute paths (.bashrc, .zshrc, .gitconfig,
+  launch.json, .env, docker-compose.yml, nginx.conf, crontab):
+  FLAGGED. Mask secrets in report (show first 4 chars only).
+- Dockerfile, docker-compose.yml: conditional markers. Only flag as
+  software project if accompanied by another marker.
+- Cloud sync boundary: FLAGGED if file is in a synced folder
+  (Dropbox, OneDrive, iCloud Drive, Google Drive).
+- Cloud placeholders / online-only files: FLAGGED, do not move.
+- Read-only files: FLAGGED.
+- Files currently in use (lsof / fuser when available): FLAGGED.
+- Cross-filesystem detection: compare device IDs. If different,
+  force copy+verify+remove instead of rename.
+- Space check: free space must be >= max(diskSafetyMarginPercent,
+  minSafetyBytes). Insufficient = FLAGGED.
+- Case collision: two files differing only in case going to same
+  destination. FLAGGED.
+- Path length: warn at 240 chars (Windows), hard fail at 260.
+- Reserved names (Windows): CON, PRN, NUL, COM1-9, LPT1-9. FLAGGED.
+- Permission check: verify write at destination.
+- Network filesystem: FLAGGED. Never trust atomic rename on NFS/SMB.
 
-Opcoes: (1) Mover se mesmo filesystem, (2) Copiar e aceitar quebra,
-(3) Pular.
+### Deep (includes Safe)
+- PATH references: search shell rc files (.bashrc, .zshrc, .profile,
+  .bash_profile, fish config) for paths pointing to files being moved.
+- Scheduled tasks: cron, launchd (.plist), systemd (.service),
+  schtasks on Windows. FLAGGED if references found.
+- Shell aliases and functions referencing moved paths.
+- Finder aliases (.alias on macOS): BEST_EFFORT.
+- Desktop shortcuts (.lnk on Windows): BEST_EFFORT.
+- Registry PATH entries (Windows): BEST_EFFORT.
 
-## Projetos de software (18.3)
+## Hash requirements
 
-Marcadores fortes incondicionais:
-.git/, package.json, Cargo.toml, go.mod, Pipfile, pyproject.toml,
-Gemfile, composer.json, pom.xml, build.gradle, Makefile, CMakeLists.txt,
-*.sln, *.xcodeproj, *.xcworkspace
+Hash (SHA-256) is mandatory when supported for:
+- Files >= 1GB.
+- Network filesystem transfers.
+- Database files (.db, .sqlite, .mdb).
+- Executables and binaries.
+- Compressed archives (.zip, .tar.gz, .rar, .7z).
+- Config files with sensitive content.
+- Files that failed in a previous execution.
+- Cross-filesystem moves (as part of copy+verify).
 
-Marcadores fortes condicionais (precisam de outro marcador):
-Dockerfile, docker-compose.yml
+## Options per flag type
 
-Marcadores fracos:
-node_modules/, .venv/, venv/, env/, __pycache__/, .gradle/, .maven/,
-.cargo/, .npm/, .yarn/, bower_components/, vendor/, Pods/, .terraform/,
-.serverless/, .cache/, .config/
+For each FLAGGED item, the user can choose:
+- Proceed: move/copy anyway, accepting the risk.
+- Skip: do not touch this file.
+- Copy_only: copy but keep original in place.
+- Manual: add to post-move checklist for manual handling.
 
-Estrutura de codigo fonte (para confirmar fracos):
-src/, app/, lib/, cmd/, tests/ ou test/, main.py, main.go, index.js,
-index.ts, app.py, manage.py, Program.cs, Main.java
+For software projects:
+- Move atomic: move entire folder as unit.
+- Skip: do not move.
+- Copy_only: copy entire folder, keep original.
 
-Classificacao:
-- 1 forte incondicional = projeto de software
-- 1 forte condicional + 1 outro marcador qualquer = projeto
-- 2+ fracos + estrutura de codigo = projeto
-- Fracos isolados ou condicionais isolados = nao basta
+For config edits:
+- Update path: edit config to reflect new location. Backup first.
+- Skip config: move file but do not edit config. Add to checklist.
+- Manual: add to checklist only.
 
-REGRA DURA: nunca mover arquivos internos separadamente. Pasta inteira
-ou nada.
+## Dependency report format
 
-Opcoes: (1) Mover pasta inteira, (2) Pular, (3) Criar representacao
-sem mover, (4) Revisar manualmente.
+```
+DEPENDENCY REPORT
+Scan mode: Safe
+Total items: 347
+OK: 312
+FLAGGED: 28
+NOT_CHECKED: 7
+ERROR: 0
 
-## Configs com caminhos absolutos (18.4)
+FLAGGED items:
+1. [SYMLINK] ~/Downloads/project-link -> ~/Code/myproject
+   Options: [skip] [move target] [copy_only]
 
-Inspecionar (com redacao de segredos):
-.env, .ini, .cfg, .conf, .toml, .yaml, .yml, .json em contexto de
-config, .plist, .reg, .desktop
+2. [SOFTWARE_PROJECT] ~/Downloads/my-react-app/ (.git, package.json)
+   Options: [move atomic] [skip] [copy_only]
 
-Heuristica para .json como config:
-- Nome contem: config, settings, preferences, options, rc, tsconfig,
-  jsconfig, launch, workspace, manifest
-- Tamanho < 1 MB
-- Em raiz de projeto de software
-- Contem chaves: path, dir, directory, root, home, output, input, src,
-  dest, target, include, exclude
-Excluir: .json > 10 MB, dentro de node_modules/vendor/.venv, datasets.
+3. [CONFIG_PATH] ~/.bashrc references ~/Downloads/scripts/deploy.sh
+   Options: [update path] [skip config] [manual]
 
-Mostrar apenas: arquivo, chave/contexto, tipo de risco, caminho
-mascarado. NUNCA mostrar tokens, senhas, DSN completo ou valor bruto.
+4. [LARGE_FILE] ~/Downloads/database-backup.sql (4.2 GB)
+   Options: [proceed with hash] [skip] [copy_only]
 
-Path relativo: NOT_CHECKED por padrao. Move atomico da unidade inteira
-reduz risco. Nunca prometer reescrita automatica sem verificacao.
-
-Opcoes: (1) Mover e atualizar auto, (2) Mover e usuario atualiza,
-(3) Pular.
-
-## PATH e shell configs (18.5) - BEST_EFFORT
-
-~/.bashrc, ~/.bash_profile, ~/.zshrc, ~/.profile,
-~/.config/fish/config.fish, PATH atual.
-
-## Shortcuts e aliases (18.6) - BEST_EFFORT
-
-.lnk (Windows), .desktop (Linux), aliases macOS.
-Finder aliases: formato proprietario Apple, diferente de symlinks POSIX.
-Podem sobreviver a algumas movimentacoes, mas nao assumir imunidade.
-
-## Scheduled tasks (18.7) - BEST_EFFORT
-
-crontab, /etc/cron.d/, ~/.config/systemd/user/, launchd, schtasks.
-
-## Cloud sync boundary (18.8)
-
-Dropbox, OneDrive, iCloud Drive, Google Drive.
-Sair ou entrar em pasta sincronizada = FLAGGED.
-
-## Cloud placeholders e online-only (18.9) - BEST_EFFORT
-
-Detectar placeholders, stubs nao hidratados, online-only.
-Riscos: move pode disparar download, tamanho/hash pode falhar.
-FLAGGED com aviso.
-
-Opcoes: (1) Hidratar e mover, (2) Pular, (3) Revisar manualmente.
-
-## Arquivos grandes, bloqueados, read-only (18.10)
-
-> 1 GB = FLAGGED. Read-only ou em uso = FLAGGED.
-
-## Cross-filesystem (18.11)
-
-Estrategia obrigatoria: copy -> verify -> remove source.
-
-## Espaco livre (18.12)
-
-Margem = max(diskSafetyMarginPercent, diskSafetyMarginMinBytes).
-Insuficiente = FLAGGED ou ERROR.
-
-## Case-collision, path length, nomes reservados (18.13)
-
-Aviso em windowsPathWarnThreshold (240). Critico em
-windowsPathHardThreshold (260). Validar CON, PRN, etc.
-
-## Permissoes (18.14)
-
-Leitura no source, escrita no source (se remocao), escrita no destino.
-Insuficiente = FLAGGED. Oferecer: ajustar, pular, copy_only.
-
-## Filesystem de rede (18.15) - BEST_EFFORT
-
-NFS, SMB/CIFS, AFP, SSHFS, FUSE remoto.
-NFS: rename nao e atomico para outros clientes.
-SMB: depende de versao/implementacao.
-FLAGGED. Recomendar copy -> verify -> remove.
-
-## Metadata (18.16)
-
-mtime, ctime, permissoes POSIX, ACLs, xattrs, resource forks,
-Finder tags, ADS, quarantine flags.
-Rename local = preserved. Copy = best_effort. Incerto = not_checked.
-
-## Hash obrigatorio (18.17)
-
-Quando hashing for suportado, obrigatorio para:
-- >= 1 GB
-- Filesystem de rede
-- Databases (.sqlite, .db, .mdb)
-- Executaveis, binarios, app bundles
-- Compactados e imagens (.zip, .tar, .gz, .dmg, .iso, .qcow2, .vmdk)
-- Configs sensiveis movidas individualmente
-- Arquivos com falha previa de copy ou timeout
-
-Se hash nao suportado nesses casos: NOT_CHECKED, exigir aprovacao do
-usuario para seguir com verificacao apenas por tamanho.
-
-## Formato do dependency report
-
-DEPENDENCY_REPORT
-Escopo: <dir>, Modo: Quick|Safe|Deep
-
-Resumo: OK: N, FLAGGED: N, NOT_CHECKED: N, ERROR: N
-
-Itens FLAGGED:
-1. <caminho>
-   Tipo: symlink | hard-link | software-project | config-path |
-   path-ref | shortcut | scheduled-task | cloud-boundary |
-   cloud-placeholder | large-file | read-only | cross-filesystem |
-   disk-space | case-collision | path-length | reserved-name |
-   permission | network-filesystem | metadata | unicode-name
-   Detalhe: <descricao>
-   Acao sugerida: <opcoes>
-
-Itens NOT_CHECKED:
-1. <tipo> - Motivo: <razao>
-
-Perguntar: (a) Revisar flagged individualmente, (b) Pular flagged e
-organizar o resto, (c) Abortar e revisar manualmente.
+NOT_CHECKED items:
+5. [FINDER_ALIAS] tool unavailable (mdls not found)
+6. [SCHEDULED_TASK] launchd check skipped (no launchctl access)
+```

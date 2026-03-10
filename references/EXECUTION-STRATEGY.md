@@ -1,135 +1,160 @@
 # Execution Strategy Reference
 
-## Mesmo filesystem local (22.1)
+## Move strategy selection
 
-Rename nativo e o padrao. Excecoes explicitas:
-- Filesystem de rede detectado
-- Cloud sync boundary detectado
-- Pedido explicito de copy + verify
+### Same-filesystem local
+Use native rename. Exceptions:
+- Network filesystem: never trust rename atomicity.
+- Cloud sync boundary: use copy+verify+remove.
+- Hard links where preserving link count matters: copy.
+- User explicitly requested copy+verify.
 
-Rename nativo preserva hard link count no mesmo filesystem.
-metadataStatus = preserved.
+### Cross-filesystem
+1. Copy file to destination.
+2. Verify: compare size. If hash required (see DEPENDENCY-CHECKS.md),
+   compute SHA-256 on both and compare.
+3. Only if verification passes: remove origin.
+4. If verification fails: keep origin, mark operation as failed,
+   log error in manifest, do not remove anything.
 
-## Filesystems diferentes local (22.2)
+### Network filesystem
+Always copy+verify+remove. Never rename.
+NFS: fsync is not guaranteed. After copy, read back and verify.
+SMB: same approach.
 
-Copy -> verify (tamanho + hash quando exigido pela Secao 18.17) ->
-remove origem. Falha = manter origem intacta, marcar erro.
+## Atomic writes
 
-## APFS no macOS (22.3)
+For manifest, config and index files:
+1. Write to temporary file in .para-temp/.
+2. Flush and fsync.
+3. Rename temp file to final path (atomic on local POSIX/NTFS).
 
-Clone copy-on-write ocorre dentro do mesmo volume APFS, nao entre
-volumes. Para verificacao, tamanho basta. Hash so nos casos da 18.17.
+## Batch writes
 
-## Colisao de nomes (22.4)
+When total operations > batchWriteThreshold (default 1000):
+- Write manifest in batches of batchWriteSize (default 10).
+- After each batch: flush, update heartbeat.
+- If interrupted mid-batch: manifest records completed operations.
+  Incomplete batch is recoverable on resume.
 
-Nunca sobrescrever silenciosamente. Usar -duplicata-N. Registrar.
+## Collision handling
 
-## Config edits (22.5)
+If destination file already exists:
+1. Never overwrite.
+2. Append -duplicata-N (N starting at 1, increment until unique).
+3. Record renamed destination in manifest (renamed=true).
 
-Backup .bak-AAAA-MM-DD-HHMM antes. Validar sintaxe depois.
-Registrar diff resumido. Nunca exibir segredo.
+## Config edits
 
-## Projetos de software (22.6)
+When a config file references a moved path:
+1. Create backup: original.bak-YYYY-MM-DD-HHMM.
+2. Edit config to update path.
+3. Validate syntax of edited config (JSON parse, YAML parse, etc.).
+4. If validation fails: restore backup, mark as failed, add to checklist.
 
-Pasta inteira como unidade. Nunca extrair internos.
+## Software projects
 
-## Legado-pre-organizacao (22.7)
+Move entire folder as atomic unit. Never:
+- Extract individual files from inside.
+- Rename internal files.
+- Modify internal configs.
 
-Mover sem rename. Renomear so depois, se usuario pedir.
+After move: verify folder exists at destination with same structure.
 
-## Escrita atomica (22.8)
+## Metadata handling
 
-1. Escrever em temp file no mesmo diretorio
-2. flush + fsync quando suportado
-3. Rename atomico para nome final
-4. Nunca deixar arquivo parcial como valido
+| Move type | Metadata |
+|-----------|----------|
+| Local rename | Preserved (OS handles it) |
+| Copy | Best_effort (timestamps may change) |
+| Cross-filesystem | Best_effort |
+| Network | Not_checked |
 
-## lastDurableOperationIndex (22.9)
+## Index update (para-index.jsonl)
 
-Indice da ultima operacao incluida em gravacao duravel.
-- Gravacao por operacao: indice da operacao recem concluida.
-- Gravacao em lote: indice da ultima operacao do lote.
+After each successful operation, append a JSON line:
 
-## Batch write (22.10)
+```json
+{
+  "path": "~/PARA/Work/2-Areas/Financas/contrato-locacao.pdf",
+  "originalPath": "~/Downloads/contrato_locacao_final (2).pdf",
+  "hash": "a3f8...c912",
+  "tags": ["financas", "casa", "contrato", "aluguel"],
+  "category": "Areas",
+  "area": "Financas",
+  "project": null,
+  "description": "Lease contract",
+  "correspondent": null,
+  "customMetadata": {},
+  "organizedAt": "2026-03-10T14:32:01Z",
+  "executionId": "abc-123",
+  "renamed": true,
+  "originalName": "contrato_locacao_final (2).pdf"
+}
+```
 
-Apos batchWriteThreshold (padrao 1000): gravar em lotes de
-batchWriteSize (padrao 10).
-- Heartbeat do lock continua obrigatorio.
-- Operacoes acima de lastDurableOperationIndex devem ser
-  re-verificadas na retomada.
-- Informar ao usuario que a gravacao e em lotes.
+Tags come from: profile aliases, keyword analysis clusters,
+user-assigned tags during triage, content analysis output.
 
-## Filesystem de rede (22.11)
+Correspondent comes from: content analysis (if enabled and detected),
+user input during triage, or null.
 
-Nao confiar em rename atomico.
-Preferir copy -> verify -> remove.
-Timeout explicito quando suportado.
-Verify falha por timeout = nao remover origem.
+## PARA-CHANGELOG.md
 
-## Metadata (22.12)
+Appended after each execution:
 
-- Move local: preserved (salvo evidencia contraria)
-- Copy entre filesystems ou rede: best_effort
-- Runtime nao suporta: not_checked
-- Relatorio declara nivel aplicado.
+```markdown
+## 2026-03-10 14:32 (exec abc-123)
+- Mode: Import
+- Source: ~/Downloads
+- 47 files moved, 3 renamed, 12 duplicates archived
+- New projects created: SJJP-Evento-anual-2026
+- New resources: Templates-financeiros
+- Flagged: 2 symlinks skipped, 1 config updated
+- Duration: 4m 12s
+```
 
-## Temp files (22.13)
+## Watch folder mode
 
-tempPath e artefato de execucao, nao dado do usuario.
-Criar em <root>/.para-temp/ quando possivel.
-Todo tempPath registrado no manifesto.
+When user activates "watch [folder]":
+1. Agent notes the folder path and scan parameters.
+2. On subsequent invocations or periodic checks, agent scans
+   the watched folder for new files (modified date > last scan).
+3. New files are presented with classification suggestions.
+4. User approves or adjusts. Agent executes approved moves.
+5. Watch state stored in .para-config.json under "watchFolders".
 
-## Falha individual (25.1)
+Note: the agent does not run as a daemon. Watch mode depends on
+the user invoking the agent periodically or the host environment
+providing scheduling (cron, launchd, etc.).
 
-1. Marcar failed, registrar erro detalhado.
-2. Gravar manifesto imediatamente (escrita atomica).
-3. Atualizar heartbeat.
-4. Perguntar: (a) retry, (b) pular e continuar, (c) pausar, (d) abort.
+## Refine mode specifics
 
-## Falha sistemica (25.2)
+When mode = Refine:
+- Skip root setup and PARA structure creation.
+- Load existing profile.
+- Scan only the target folder.
+- Suggest: better sub-folder organization, files that belong in a
+  different PARA category, name standardization, internal duplicates,
+  tag enrichment in the index.
+- Moves within PARA use type "refine-move" in manifest.
+- Cross-category moves (e.g., from Areas to Projects) are valid
+  and recorded with both source and destination category.
 
-3+ consecutivas: pausar automaticamente.
-Informar possivel problema sistemico.
-Oferecer: (a) investigar, (b) pular restante e gerar relatorio,
-(c) reverter concluidas, (d) abortar.
+## Consistent classification mode
 
-## Falha critica (25.3)
+When processing large batches with many similar files:
+- After the first few classifications establish a pattern, bias
+  subsequent suggestions toward the same category.
+- Example: if 5 files matching "invoice-*" were classified as
+  Areas/Financas, suggest the same for the 6th without asking.
+- User can override any individual suggestion.
+- Disable by choosing "Full control" interaction mode.
 
-Filesystem inacessivel ou lock nao atualizavel:
-1. Gravar manifesto best-effort.
-2. Registrar erro critico.
-3. Manter lock ativo.
-4. Nunca tentar remover lock em erro critico.
-5. Recovery na proxima execucao via lock stale + manifesto incompleto.
+## Correspondent tracking
 
-## Falha em config edit (25.4)
-
-1. Oferecer restauracao do backup se existir.
-2. Marcar failed.
-3. Adicionar ao checklist manual.
-4. Continuar salvo se for pre-requisito.
-
-## Edge cases de execucao
-
-Pastas vazias: FLAGGED. Perguntar: remover, manter ou mover para Arquivo.
-
-Arquivos sem extensao: FLAGGED. Nao assumir tipo. Perguntar.
-
-Encoding ambiguo: FLAGGED. Mostrar hex se necessario. Perguntar rename.
-
-> 10 GB: FLAGGED com aviso especial. Informar tempo estimado.
-
-> 10.000 itens numa pasta: FLAGGED. Sugerir subdivisao.
-
-Circular symlinks: detectar loops. FLAGGED. Nunca seguir.
-
-Arquivos em uso: FLAGGED. Tentar identificar processo (BEST_EFFORT).
-Oferecer: pular e incluir em checklist, tentar depois, abortar.
-
-Permissoes revogadas durante execucao: marcar failed, registrar,
-continuar ou perguntar.
-
-Espaco esgotado durante copy: parar imediatamente, nao remover origem,
-informar espaco necessario vs disponivel, perguntar.
-
-Cloud sync conflito: detectar BEST_EFFORT. FLAGGED. Nao sobrescrever.
+When content analysis (level 1+) detects sender or organization:
+- Record in index under "correspondent".
+- Examples: "Receita Federal", "SJJP", "Landlord John".
+- If not detected, field is null.
+- User can manually assign during triage.

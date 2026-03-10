@@ -1,0 +1,8 @@
+interface:
+  display_name: "PARA File Organizer"
+  short_description: "Organize local files using the PARA method with safety checks and rollback"
+  brand_color: "#2563EB"
+  default_prompt: "Organize my files using PARA"
+
+policy:
+  allow_implicit_invocation: true

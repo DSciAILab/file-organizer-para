@@ -1,77 +1,105 @@
-# Maintenance and On-Demand Commands Reference
+# Maintenance and Commands Reference
 
-## Comandos on-demand (Secao 29)
+## On-demand commands
 
-### Novo projeto
-Trigger: "novo projeto" / "new project"
-1. Perguntar nome e prazo estimado.
-2. Perguntar arvore (se mode=separate).
-3. Criar: <tree>/1-Projetos/AAAA-MM_Nome-descritivo/
-4. Subpastas: 01_Briefing, 02_Rascunhos, 03_Versao-final, 04_Feedback.
-5. README.txt opcional.
-6. Confirmar.
+### "new project" / "novo projeto"
+1. Ask for project name and area (if separate trees).
+2. Ask for deadline (optional but recommended).
+3. Create folder: <root>/<tree>/1-Projetos/YYYY-MM_Name/
+4. Create recommended sub-folders: 01_Planning, 02_Resources,
+   03_Deliverables.
+5. Add to profile.activeProjects if deadline provided.
+6. Update index.
 
-### Nova area
-Trigger: "nova area" / "new area"
-1. Perguntar nome e arvore.
-2. Criar: <tree>/2-Areas/Nome-descritivo/
-3. Confirmar.
+### "new area" / "nova area"
+1. Ask for area name.
+2. Create folder: <root>/<tree>/2-Areas/Name/
+3. Ask for aliases (keywords that identify this area).
+4. Add to profile.areas.
+5. Update config.
 
-### Novo recurso
-Trigger: "novo recurso" / "new resource"
-1. Perguntar nome e arvore.
-2. Criar: <tree>/3-Recursos/Nome-descritivo/
-3. Confirmar.
+### "archive project" / "arquivar projeto"
+1. List active projects. User selects one.
+2. Move entire project folder to 4-Arquivo/Projetos-concluidos/.
+3. Remove from profile.activeProjects.
+4. Generate manifest entry.
+5. Update index entries for all files in the project.
 
-### Arquivar projeto
-Trigger: "arquivar projeto" / "archive project"
-1. Listar projetos em 1-Projetos.
-2. Perguntar qual arquivar.
-3. Mover para 4-Arquivo/Projetos-concluidos/
-4. Gerar registro breve.
+### "maintenance" / "manutencao"
+1. Weekly check: projects with no modification > 30 days.
+   Suggest archiving.
+2. Monthly check: areas/resources with no modification > 90 days.
+   Suggest review.
+3. Check Legacy-pre-organization for remaining items.
+4. Re-run dependency check on flagged items if relevant.
+5. Suggest dedup on high-turnover folders (Downloads, Desktop).
+6. Suggest index reindex for enrichment.
 
-### Status
-Trigger: "status PARA" / "PARA status"
-1. Mostrar config atual.
-2. Contar projetos ativos, areas, recursos, itens em arquivo.
-3. Informar ultimo scan e ultima manutencao.
-4. Listar manifestos incompletos, se houver.
+### "PARA status" / "status PARA"
+Show:
+- Root path, mode, trees, folder format.
+- Number of items per category (Projects, Areas, Resources, Archive).
+- Active projects with deadlines.
+- Profile summary (areas, aliases).
+- Last execution date and summary.
+- Watch folders status.
+- Disk space used by PARA root.
 
-## Manutencao periodica (Secao 30)
+### "find duplicates" / "encontrar duplicados"
+See DUPLICATE-DETECTION.md. Independent of workflow.
 
-### Revisao semanal (5 minutos)
-- Listar projetos em 1-Projetos.
-- Verificar data de ultima modificacao.
-- Projeto inativo > 30 dias: FLAGGED.
-  Sugerir: (a) arquivar, (b) manter ativo, (c) revisar depois.
+### "where was [name]?" / "onde estava [nome]?"
+1. Search para-index.jsonl for entries where originalPath or path
+   contains the search terms (case-insensitive, partial match).
+2. Search manifest history for operations with matching sourcePath
+   or destinationPath.
+3. Present results chronologically:
+   "relatorio-2024.pdf:
+    2026-01-15: moved from ~/Downloads/ to ~/PARA/1-Projetos/...
+    2026-04-02: archived to ~/PARA/4-Arquivo/..."
+4. If no results: "No records found for [name]."
 
-### Revisao mensal (15 minutos)
-- Listar areas e recursos.
-- Verificar data de ultima modificacao.
-- Sem modificacao > 90 dias: FLAGGED.
-  Sugerir: (a) arquivar, (b) manter, (c) revisar depois.
-- Verificar 4-Arquivo/Legado-pre-organizacao.
-  Se houver itens: perguntar se quer classificar ou manter.
-- Re-rodar dependency check nos itens flagged, se relevante.
+### "trace [name]" / "rastrear [nome]"
+Same as "where was" but shows complete trajectory with all
+intermediate locations and renames.
 
-### Relatorio de manutencao
+### "update areas" / "atualizar areas"
+1. Show current profile.
+2. User adds, removes, renames, merges areas.
+3. User updates aliases.
+4. User adds/removes active projects.
+5. Save updated profile to config.
 
-PARA MAINTENANCE REPORT
-Data, Root.
+### "refine [folder]" / "melhorar [pasta]"
+1. Validate folder is inside PARA root.
+2. Enter Refine mode.
+3. Scan only that folder.
+4. Suggest improvements: sub-folder structure, cross-category moves,
+   name standardization, internal dedup, tag enrichment.
+5. Present plan. Wait for approval. Execute.
 
-Projetos ativos: N
-- Inativos (>30 dias): <lista>
+### "watch [folder]"
+1. Register folder in config.watchFolders with last scan timestamp.
+2. On subsequent invocations: scan for files newer than last scan.
+3. Present new files with classification suggestions.
+4. User approves. Agent executes.
+5. Update last scan timestamp.
+Note: agent is not a daemon. Watch depends on user invoking the
+agent periodically or host scheduling.
 
-Areas: N
-- Sem modificacao (>90 dias): <lista>
+### "reindex"
+1. Read all manifests in .para-manifest-history/.
+2. Rebuild para-index.jsonl from scratch.
+3. Optionally re-enrich descriptions using content analysis.
+4. Report: "Index rebuilt. N entries. M enriched."
 
-Recursos: N
-- Sem modificacao (>90 dias): <lista>
+## Periodic maintenance schedule
 
-Arquivo:
-- Legado-pre-organizacao: N arquivos
-- Projetos concluidos: N
-- Areas inativas: N
+| Frequency | Duration | Actions |
+|-----------|----------|---------|
+| Weekly | ~5 min | Stale projects, Legacy check |
+| Monthly | ~15 min | Stale areas/resources, dedup on Downloads, index review |
+| Quarterly | ~30 min | Full dependency re-check, profile review, archive cleanup |
 
-Recomendacoes: <lista>
-Proximo scan recomendado: <data>
+Agent suggests these during "maintenance" command or proactively
+if the user starts a conversation related to organization.

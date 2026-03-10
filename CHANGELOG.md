@@ -1,106 +1,70 @@
 # Changelog
 
-## v9.0.0 - 2026-03-09
+## [11.0.0] - 2026-03-10
 
-### Breaking
-- Reestruturado como Agent Skills package com SKILL.md (<500 linhas) e
-  6 arquivos de referencia. Isso segue a especificacao oficial de
-  agentskills.io (progressive disclosure: metadata Level 1, instructions
-  Level 2, references Level 3).
+### Compliance
+- Rewrote description field: WHAT + WHEN + trigger phrases, under 1024 chars.
+- Added license: MIT.
+- Added compatibility field.
+- Version as quoted string per spec.
+- Removed user-invocable (not in spec).
+- Tags as comma-separated string instead of YAML array.
+- Moved README.md out of skill folder (repo-level only).
+- Added agents/openai.yaml for Codex compatibility.
 
-### Added
-- Secoes 25 (falha durante execucao), 26 (rollback completo com
-  colisao e pastas vazias), 27 (relatorio), 28 (checklist manual),
-  29 (comandos on-demand), 30 (manutencao periodica), 31 (edge cases),
-  32 (referencias metodologicas), 33 (resumo do plano), 35 (manifesto
-  corrompido e schema desconhecido). Todas existem e sao referenciadas.
-- Workflow formal completo (Passo 0-8) presente no SKILL.md.
-- Exemplos concretos de classificacao PARA com 11 itens na tabela.
-- Exemplos de ambiguidade em lote e individual.
-- Hash obrigatorio para classes de risco (>=1GB, rede, databases,
-  executaveis, compactados, configs sensiveis, falhas previas).
-- directoriesCreated no manifesto com status kept_not_empty.
-- Lock creation failure: abortar, nunca executar sem lock.
-- Manifesto completo que falha ao ser movido para history: marcado com
-  -archive-failed e excluido do pool ativo.
-- Schema antigo: migracao com backup.
-- Colisao no rollback: -rollback-collision-N.
-- Timeout de scan (>10 min).
-- Separacao ignoredDiscoverPatterns / ignoredRecoveryPatterns.
-- Reconciliacao lock-manifesto por 4 campos.
-- Regra explicita: lock nao criavel = abortar.
-- Manifesto com schema mais novo = somente leitura.
-- Recovery parcial de corrupted = somente leitura.
+### New features
+- Onboarding profile: default areas, interactive adjustment, aliases,
+  sub-projects, interaction mode selection (Guided/Full control/Full trust).
+- Operation modes: Import, Refine, Maintain. Auto-detected from
+  source vs root relationship.
+- Root setup: three scenarios (user defines, asks, delegates).
+- Keyword Analysis (Step 2.3): tokenize filenames, cluster by frequency,
+  cross-reference with profile aliases.
+- Content Analysis (Step 2.4): three levels (0=name only, 1=shallow
+  content, 2=deep content). Opt-in, privacy-first.
+- Media Handling (Step 2.2): detect images, videos, screenshots, audio.
+  EXIF extraction, audio/video metadata (ID3, Vorbis, MP4 atoms).
+  Photos associated to projects by date/keyword correlation.
+  User choice: PARA structure or standalone media structure.
+- Duplicate Detection (Step 2.5): two-phase algorithm (size + hash).
+  Three integration options: workflow step, on-demand command, combined.
+  Cross-location dedup against existing PARA.
+- Triage Session (Step 2.6): all uncertainties presented grouped by
+  type before planning. Reduces mid-workflow interruptions.
+- Folder handling rules: atomic, cohesive, mixed, empty, single-file.
+- Searchable index: para-index.jsonl with per-file metadata, tags,
+  category, description, correspondent, custom metadata.
+- File traceability: "where was" and "trace" commands search all
+  manifests and index for complete file history.
+- PARA-CHANGELOG.md: human-readable cumulative log per execution.
+- Watch folder command: monitor a folder for new files.
+- Correspondent tracking: record origin/sender of files.
+- Consistent mode: bias toward uniformity in batch classification.
+- Refine mode: reorganize already-organized content within PARA.
+- Tags in manifest/index for cross-category search.
 
-### Fixed
-- Secao 24.5 completa (retryCount incremento e reset).
-- Heartbeat consistente entre lock e workflow.
-- Rename local intencional sem hash declarado explicitamente.
-- Numeracao sequencial de secoes.
-- Changelog separado por fix/feature/breaking.
+### New reference files
+- references/DUPLICATE-DETECTION.md
+- references/KEYWORD-AND-CONTENT-ANALYSIS.md
+- references/MEDIA-HANDLING.md
 
-### Removed
-- Ambiguidade sobre type=rename (rename e atributo, nao tipo).
+### Updated
+- Manifest schemaVersion 7 -> 8. New types: deduplicate, refine-move.
+- Config schema: profile field with areas, activeProjects, resources.
+- Workflow: Steps 2.2, 2.3, 2.4, 2.5, 2.6 added between Discovery
+  and Dependency Check.
+- On-demand commands: find duplicates, where was, trace, update areas,
+  refine, watch.
+- Maintenance: re-run dedup on high-turnover folders, reindex suggestion.
+- Edge cases: hard links as non-duplicates, Refine mode cross-category
+  moves, watch mode rapid creation.
 
-## v8.0.0 - 2026-03-09
-- Separacao ignoredDiscoverPatterns / ignoredRecoveryPatterns.
-- Hash obrigatorio em classes criticas.
-- Reconciliacao 4 campos lock-manifesto.
-- directoriesCreated no manifesto.
-- Ciclo de vida de manifestos completos.
-- Regra formal de artefatos internos.
+## [10.0.0] - 2026-03-09
+- Added duplicate detection (three options).
+- Root setup with three scenarios (define, ask, delegate).
+- Scan modes integrated with dedup behavior.
 
-## v7.0.0 - 2026-03-09
-- Adicionadas secoes 25-35 completas.
-- Corrigida Secao 24.5.
-- Encoding UTF-8 obrigatorio.
-- Politica Unicode nao-latino.
-- Heuristica .json como config.
-- Formato misto de categorias.
-- Dockerfile/docker-compose como marcadores condicionais.
-
-## v6.1 - 2026-03-08
-- ignoredInternalPatterns cobrindo artefatos.
-- Symlinks nunca seguidos recursivamente.
-- Metadata preservation policy.
-- Cloud placeholder check.
-- Nomes reservados Windows.
-
-## v6.0 - 2026-03-08
-- tempPath como artefato de execucao.
-- Retomada verificada por type.
-- Filesystem de rede.
-- APFS clones.
-- Finder aliases.
-- Limite de tentativas.
-
-## v5.0 - 2026-03-08
-- manifestHistoryDir.
-- Reconciliacao lock-manifesto por executionId.
-- Retomada por estado.
-- Rollback de configEdits.
-- lastDurableOperationIndex.
-- Stale lock por heartbeat.
-
-## v4.0 - 2026-03-08
-- Lock timeouts no config.
-- Scan pattern ativo.
-- Permissoes no source e destino.
-- copy_only como alternativa.
-- Batch write.
-
-## v3.0 - 2026-03-08
-- Negociacao de source.
-- Protecao source-root.
-- Modos Quick/Safe/Deep.
-- Lock com heartbeat.
-- Manifesto com estado por operacao.
-
-## v2.0 - 2026-03-08
-- Dependency check completo.
-- Planejamento com tabela formal.
-- Convencoes de nomes.
-- Politica de ambiguidade.
-
-## v1.0 - 2026-03-08
-- Versao inicial.
+## [9.0.0] - 2026-03-09
+- Initial public release with full PARA workflow.
+- Dependency checks, manifest, rollback, maintenance.
+- Six reference files. Compliant with agentskills.io spec.

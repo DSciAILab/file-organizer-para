@@ -1,163 +1,113 @@
 # Rollback and Recovery Reference
 
-## Recovery de execucao interrompida (Secao 11)
+## Recovery on startup
 
-No inicio de cada execucao, antes de qualquer scan:
+When the skill starts (Step 0), check for:
+1. Stale lock file (updatedAt > heartbeatTimeoutMinutes).
+2. Incomplete manifest (status != "completed").
 
-1. Escanear root, excluindo ignoredRecoveryPatterns.
-   Manifestos ativos (para-manifest-*.json) ficam visiveis.
-2. Validar cada manifesto: JSON valido? schemaVersion conhecido?
-   completedAt presente?
-3. Incompleto = completedAt ausente ou null.
-4. Se lock + manifesto incompleto: reconciliar por executionId,
-   manifestPath, root, source. Coerentes = mesma execucao.
-   Incoerentes = perguntar: (a) confiar lock, (b) confiar manifesto,
-   (c) arquivar ambos, (d) abortar.
-5. Multiplos incompletos: listar por data e source.
-6. Apresentar opcoes: (a) retomar, (b) reverter, (c) arquivar e novo.
+If found, present options:
+- Resume: continue from last completed operation.
+- Rollback: reverse all completed operations.
+- Abort: remove lock, keep files as-is. User handles manually.
 
-Retomar:
-- Carregar manifesto, reconciliar por estado (ver abaixo).
-- Continuar da primeira operacao nao concluida.
-- Preencher completedAt ao concluir.
+## Rollback procedure
 
-Reverter:
-- Rollback das operacoes efetivamente concluidas.
-- Gerar relatorio de rollback.
+### Order
+Reverse order of completed operations (last completed first).
 
-Arquivar:
-- Mover para .para-manifest-history/ com sufixo -archived.
+### By operation type
 
-## Reconciliacao por estado (Secao 24)
+**move (local rename)**:
+1. Rename file back from destination to source.
+2. If file was renamed (renamed=true), restore original name.
+3. Mark operation as rolled_back in manifest.
 
-Regra geral: nunca assumir que o manifesto sozinho reflete a verdade.
-Comparar: existencia de origem, destino, tamanho, hash, tempPath.
+**copy (cross-filesystem)**:
+1. If source still exists at original location: remove destination copy.
+2. If source was removed (status = source_removed): move destination
+   back to original source path.
+3. Mark as rolled_back.
 
-planned:
-- Origem existe, destino nao: executar.
-- Destino existe: investigar colisao.
+**copy_only**:
+1. Remove destination copy (source is always intact).
+2. Mark as rolled_back.
 
-in_progress:
-- Origem existe, destino nao, tempPath nao: resetar para planned.
-- tempPath existe e parcial: perguntar se remove e reinicia.
-- tempPath existe e consistente: promover para copied.
-- Destino existe e completo: promover para copied/verified.
+**deduplicate**:
+1. Move archived files back from Archive/Duplicados/ to their
+   original locations (using sourcePath from manifest).
+2. Mark as rolled_back.
 
-copied:
-- Revalidar destino (tamanho + hash se aplicavel).
-- Valido: promover para verified. Invalido: failed ou planned.
+**refine-move**:
+1. Move file back to previous location within PARA.
+2. Restore original name if renamed.
+3. Mark as rolled_back.
 
-verified:
-- type=move ou copy: se origem existe, seguir para source_removed.
-- type=copy_only: promover para completed.
-- Origem nao existe + destino valido: completed.
+**configEdits**:
+1. Restore backup file (.bak-YYYY-MM-DD-HHMM).
+2. Validate restored config.
+3. Mark as rolled_back.
 
-source_removed:
-- Destino valido: completed.
-- Destino invalido: ERROR critico.
+### Collision during rollback
+If original location is now occupied:
+1. Never overwrite.
+2. Place file at original path with -rollback-collision-N suffix.
+3. Report collision in rollback summary.
 
-completed: nao reexecutar.
-skipped: nao reexecutar.
+### Created directories
+Remove only if empty after rollback. If not empty (other files
+were placed there independently), keep and report.
 
-failed:
-- retryCount < max: oferecer retry, pular, reverter, abortar.
-- retryCount >= max: apenas pular, reverter, abortar.
+### Partial rollback
+If a rollback operation itself fails:
+1. Record the failure.
+2. Continue with remaining rollback operations.
+3. Mark overall rollback as "partial".
+4. Report which operations could not be reversed.
 
-rolled_back: nao reexecutar.
+## Rollback script
 
-## Config edits na retomada
+Generated after each execution as:
+<root>/para-rollback-YYYY-MM-DD-HHMM.sh (macOS/Linux)
+<root>/para-rollback-YYYY-MM-DD-HHMM.ps1 (Windows)
 
-- planned: aplicar se necessario.
-- completed: nao reaplicar.
-- restore_planned: rollback em andamento.
-- failed: perguntar se tenta restaurar.
+Script contains the exact reverse commands for every completed
+operation. Can be run manually outside the skill if needed.
 
-## Limpeza de tempPath orfaos
+## Interactive rollback
 
-Antes de processar operacoes na retomada:
-1. Identificar operacoes com tempPath nao-null.
-2. Verificar existencia fisica.
-3. Se existe e operacao nao e copied/verified: perguntar remove/
-   inspeciona/pula.
-4. tempPath e artefato de execucao, remocao nao viola preservacao
-   de dados do usuario.
+Available via on-demand command or when skill detects incomplete state.
+Options:
+- Rollback all: reverse everything.
+- Rollback selective: show operations, user picks which to reverse.
+- Rollback to checkpoint: reverse operations after a specific index.
 
-## Limite de tentativas
+## Manifest reconciliation
 
-- retryCount so incrementa para operacoes failed.
-- Ao atingir maxRetryPerOperation: parar retry automatico.
-- Reset pelo usuario: confirmacao explicita + registro no manifesto.
+On startup, if lock exists but manifest state disagrees:
+1. Compare executionId between lock and manifest.
+2. If mismatch: stale lock from different execution. Ask user.
+3. If match but status disagrees: trust manifest (it has more detail).
+4. Verify files on disk match manifest expectations.
+5. If disk state diverges (user moved files manually): report
+   discrepancies, ask user before any action.
 
-## Rollback (Secao 26)
+## Edge cases
 
-Principios:
-- Ordem inversa das operacoes concluidas.
-- So atua em completed, source_removed, verified.
-- planned, skipped, failed: nao revertidas.
-- configEdits: revertidos apos arquivos, ordem inversa.
+**Corrupted manifest**: attempt JSON parse. If partial, recover
+what is parseable. Rename original to .corrupted. Report.
 
-Estrategia por tipo:
+**Unknown schema version**: attempt best-effort field mapping.
+If critical fields missing, warn and suggest skill update.
 
-type=move:
-- Mover destination de volta para source.
-- Se renamed=true, restaurar nome original.
-- Se rename falhar, usar copy -> verify -> remove.
-- Marcar rolled_back.
+**Permission revoked mid-rollback**: record which operations
+could not be reversed, continue with others, report.
 
-type=copy:
-- Se source existe: remover destination.
-- Se source nao existe: mover destination de volta.
-- Marcar rolled_back.
+**Disk full during rollback**: prioritize restoring files to
+source (which frees destination space). If both locations are
+on the same disk, report and ask user to free space.
 
-type=copy_only:
-- Remover destination (source intacto).
-- Marcar rolled_back.
-
-configEdits completed:
-- Restaurar backup. Marcar restored.
-
-Colisao no rollback:
-- Nunca sobrescrever silenciosamente.
-- Perguntar: (a) sobrescrever, (b) usar -rollback-collision-N,
-  (c) pular.
-- Padrao seguro: (b).
-
-Pastas criadas:
-- Remover durante rollback apenas se criada por esta execucao E vazia.
-- Se contem conteudo novo: manter, registrar como kept_not_empty.
-
-Rollback parcial:
-- Se uma operacao falha no rollback: registrar, continuar.
-- Gerar relatorio com: revertidas, falhas, estado atual.
-- rollbackStatus = partial.
-
-Script de rollback:
-- .sh (Unix) ou .ps1 (Windows).
-- Comandos em ordem inversa, comentados.
-- Cabecalho com aviso para revisar antes de executar.
-
-Rollback interativo:
-- Reverter tudo, reverter selecionadas, cancelar.
-- Respeitar dependencias (nao remover pasta com arquivos dentro).
-
-## Manifesto corrompido (Secao 35)
-
-JSON invalido:
-1. Informar: "O manifesto <nome> nao pode ser lido."
-2. Opcoes: (a) mover para history com -corrupted, (b) recovery parcial
-   (ler ate onde JSON e valido, apresentar ao usuario, SOMENTE LEITURA,
-   nunca dirige resume ou rollback automatico), (c) deletar (artefato
-   da skill, nao dado do usuario), (d) abortar.
-
-Schema desconhecido (schemaVersion > suportado):
-1. Informar: "Schema versao N, suportado ate M."
-2. SOMENTE LEITURA. Resume, rollback e escrita sao proibidos.
-3. Opcoes: (a) ler como best-effort (campos desconhecidos ignorados),
-   (b) mover para history com -unknown-schema, (c) abortar para
-   atualizar a skill.
-
-Schema antigo (schemaVersion < atual):
-1. Informar que e schema anterior.
-2. Opcoes: (a) migrar com backup, (b) ler best-effort sem migrar,
-   (c) mover para history.
-3. Se migrar: copia do original antes de alterar.
+**Files modified after organization**: if a file at the destination
+has been modified since the organization (different hash or size),
+warn before rollback. Moving a modified file back may lose changes.
+Ask user per file.

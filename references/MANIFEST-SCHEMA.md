@@ -1,211 +1,229 @@
 # Manifest Schema Reference
 
-## Ponteiro global
+## Global pointer (para-root.json)
 
-Localizacao:
-- macOS/Linux: ~/.config/openclaw/para-root.json
-- Windows: %APPDATA%/OpenClaw/para-root.json
-
+```json
 {
   "version": 1,
-  "activeRoot": "/caminho/absoluto/para/PARA",
-  "knownRoots": ["/caminho/absoluto/para/PARA"],
-  "lastUsed": "2026-03-09T10:30:00Z"
+  "activeRoot": "~/Documents/PARA",
+  "knownRoots": ["~/Documents/PARA", "~/PARA-archive"]
 }
+```
 
-## Config da raiz (.para-config.json)
+## Root config (.para-config.json)
 
+```json
 {
-  "version": 7,
-  "root": "/caminho/absoluto/para/PARA",
-  "mode": "single | separate",
-  "trees": [],
-  "os": "macOS | Linux | Windows | WSL",
-  "created": "2026-03-09T10:30:00Z",
-  "lastOrganized": null,
-  "lastMaintenance": null,
-  "scanModeDefault": "safe",
-  "categoryFolderFormat": "number-hyphen | number-dot-space",
-  "maxDepthBelowCategoryRoot": 3,
-  "manifestActiveScanPattern": "para-manifest-*.json",
-  "manifestHistoryDir": ".para-manifest-history",
-  "tempDirName": ".para-temp",
-  "ignoredStandalonePatterns": [
-    ".DS_Store", "thumbs.db", "desktop.ini", ".Spotlight-V100",
-    ".Trashes", ".fseventsd", "$RECYCLE.BIN",
-    "System Volume Information"
-  ],
-  "ignoredDiscoverPatterns": [
-    ".para-config.json", ".para-lock.json",
-    ".para-manifest-history", ".para-manifest-history/",
-    ".para-temp", ".para-temp/",
-    "para-manifest-*.json", "para-rollback-*"
-  ],
-  "ignoredRecoveryPatterns": [
-    ".para-manifest-history", ".para-manifest-history/",
-    ".para-temp", ".para-temp/",
-    "para-rollback-*"
-  ],
-  "dependencyLog": [],
-  "lastIncompleteManifest": null,
-  "lockTimeoutMinutes": 120,
-  "heartbeatTimeoutMinutes": 15,
-  "diskSafetyMarginPercent": 10,
-  "diskSafetyMarginMinBytes": 1073741824,
-  "windowsPathWarnThreshold": 240,
-  "windowsPathHardThreshold": 260,
-  "batchWriteThreshold": 1000,
-  "batchWriteSize": 10,
-  "maxRetryPerOperation": 3
-}
-
-Validacao do campo trees:
-- mode=single: trees deve ser []
-- mode=separate: trees deve ter >= 2 nomes unicos, ASCII safe, hifens ok
-- Se trees > 5: alertar (estrutura dispersa)
-
-## Lock (.para-lock.json)
-
-{
-  "version": 3,
-  "executionId": "uuid",
-  "manifestPath": "/abs/path/para-manifest-AAAA-MM-DD-HHMM.json",
-  "startedAt": "2026-03-09T11:00:00Z",
-  "updatedAt": "2026-03-09T11:05:00Z",
-  "source": "/abs/source",
-  "root": "/abs/root",
-  "mode": "organize | maintenance | archive | resume | rollback",
-  "status": "active"
-}
-
-Regras do lock:
-- Criar antes de qualquer escrita.
-- Atualizar updatedAt: a cada operacao ou a cada 60s.
-- Stale: updatedAt > heartbeatTimeoutMinutes.
-- Duracao total longa: alertar, nao stale.
-- Lock nao criavel (permissao, disco) = abortar.
-- Reconciliacao: executionId + manifestPath + root + source coerentes.
-- Divergencia = perguntar antes de continuar.
-- Remover apenas em: sucesso, rollback concluido, abort seguro.
-- Falha grave: manter lock.
-
-## Manifesto (para-manifest-*.json)
-
-{
-  "schemaVersion": 6,
-  "date": "2026-03-09T11:00:00Z",
-  "completedAt": null,
-  "executionId": "id-unico",
-  "root": "/abs/path/PARA",
-  "source": "/abs/path/source",
-  "mode": "organize",
-  "scanMode": "safe",
+  "version": 8,
+  "root": "~/Documents/PARA",
+  "mode": "separate",
+  "trees": ["Work", "Personal"],
+  "os": "darwin",
   "categoryFolderFormat": "number-hyphen",
-  "lastDurableOperationIndex": 0,
-  "directoriesCreated": [
-    {
-      "path": "/abs/path/criada",
-      "status": "created | kept_not_empty | removed_on_rollback"
-    }
-  ],
-  "operations": [
-    {
-      "index": 1,
-      "type": "move | copy | copy_only",
-      "status": "planned | in_progress | copied | verified |
-                 source_removed | completed | skipped | failed |
-                 rolled_back",
-      "source": "/abs/origem",
-      "destination": "/abs/destino",
-      "tempPath": null,
-      "sameFilesystem": true,
-      "networkFilesystem": false,
-      "sourceExistedBefore": true,
-      "destinationExistedBefore": false,
-      "bytesExpected": 12345,
-      "bytesCopied": 12345,
-      "verified": true,
-      "renamed": false,
-      "retryCount": 0,
-      "metadataStatus": "preserved | best_effort | not_checked | failed",
-      "placeholderState": "none | hydrated | online_only | unknown",
-      "timestampStarted": "2026-03-09T11:00:01Z",
-      "timestampEnded": "2026-03-09T11:00:02Z",
-      "error": null
-    }
-  ],
-  "configEdits": [
-    {
-      "index": 1,
-      "targetFile": "/abs/.zshrc",
-      "backupFile": "/abs/.zshrc.bak-2026-03-09-1100",
-      "status": "planned | completed | restore_planned | restored |
-                 failed",
-      "timestampStarted": null,
-      "timestampEnded": null,
-      "error": null
-    }
-  ],
-  "skipped": [],
-  "notChecked": [],
-  "errors": [],
-  "rollbackStatus": null
+  "maxDepthBelowCategoryRoot": 3,
+  "scanModeDefault": "safe",
+  "manifestPattern": "para-manifest-YYYY-MM-DD-HHMM.json",
+  "historyDir": ".para-manifest-history",
+  "tempDir": ".para-temp",
+  "ignoredFiles": [".DS_Store", "thumbs.db", "desktop.ini",
+    ".Spotlight-V100", ".Trashes", "$RECYCLE.BIN"],
+  "safety": {
+    "diskSafetyMarginPercent": 10,
+    "minSafetyBytes": 1073741824,
+    "windowsPathWarnAt": 240,
+    "windowsPathHardLimit": 260,
+    "lockTimeoutMinutes": 120,
+    "heartbeatTimeoutMinutes": 15,
+    "batchWriteThreshold": 1000,
+    "batchWriteSize": 10,
+    "maxRetryPerOperation": 3
+  },
+  "watchFolders": [],
+  "profile": { "...see PARA-METHOD-REFERENCE.md..." },
+  "createdAt": "2026-03-10T10:00:00Z",
+  "updatedAt": "2026-03-10T14:32:01Z"
 }
+```
 
-## Mapeamento plano -> manifesto
+### Trees validation
+- mode "single": trees must be empty array.
+- mode "separate": trees must have >= 2 unique non-empty strings.
+- trees > 5: alert (dispersed structure).
 
-| Acao no plano                  | type      | renamed |
-|-------------------------------|-----------|---------|
-| Move                          | move      | false   |
-| Move + Rename                 | move      | true    |
-| Copy + Verify + Remove source | copy      | *       |
-| Copy_only                     | copy_only | *       |
-| Skip                          | sem op    |         |
+## Lock file (.para-lock.json)
 
-## Estados da operacao
+```json
+{
+  "version": 2,
+  "executionId": "abc-123",
+  "manifestPath": ".para-manifest-history/para-manifest-2026-03-10-1432.json",
+  "startedAt": "2026-03-10T14:32:00Z",
+  "updatedAt": "2026-03-10T14:35:12Z",
+  "source": "~/Downloads",
+  "root": "~/Documents/PARA",
+  "mode": "Import",
+  "status": "in_progress"
+}
+```
 
-1. planned: estado inicial
-2. in_progress: antes da acao real
-3. copied: copia concluida (apenas cross-fs/rede)
-4. verified: integridade confirmada
-5. source_removed: origem removida (type=move ou copy)
-6. completed: operacao finalizada
+### Lock rules
+- Create before any write. Abort if creation fails.
+- Update updatedAt on every operation or every 60s.
+- Stale: updatedAt older than heartbeatTimeoutMinutes.
+- Stale lock: ask user to resume, rollback or force-remove.
+- Remove only on: success, completed rollback, safe abort.
+- Reconciliation: executionId, manifestPath, root and source
+  must match between lock and manifest.
 
-Move local via rename nativo: planned -> completed (intencional,
-rename e atomico, nao separa copia de verificacao).
+## Manifest file (para-manifest-*.json)
 
-7. failed: erro (registrar no campo error)
-8. rolled_back: revertida com sucesso
-9. skipped: pulada por decisao
+```json
+{
+  "schemaVersion": 8,
+  "executionId": "abc-123",
+  "startedAt": "2026-03-10T14:32:00Z",
+  "completedAt": null,
+  "root": "~/Documents/PARA",
+  "source": "~/Downloads",
+  "mode": "Import",
+  "scanMode": "safe",
+  "folderFormat": "number-hyphen",
+  "interactionMode": "guided",
+  "operationIndex": 0,
+  "directoriesCreated": [],
+  "operations": [],
+  "configEdits": [],
+  "status": "in_progress"
+}
+```
 
-completedAt do manifesto: so preencher quando todas as operacoes
-estiverem em estado terminal coerente.
+### Operation entry
 
-## directoriesCreated status values
+```json
+{
+  "index": 0,
+  "type": "move",
+  "status": "completed",
+  "sourcePath": "~/Downloads/contrato_locacao_final (2).pdf",
+  "destinationPath": "~/PARA/Work/2-Areas/Financas/contrato-locacao.pdf",
+  "renamed": true,
+  "originalName": "contrato_locacao_final (2).pdf",
+  "bytesExpected": 245760,
+  "bytesCopied": null,
+  "verification": "not_applicable",
+  "hash": null,
+  "tags": ["financas", "casa", "contrato"],
+  "correspondent": null,
+  "confidence": "high",
+  "startedAt": "2026-03-10T14:32:05Z",
+  "completedAt": "2026-03-10T14:32:05Z",
+  "error": null,
+  "retryCount": 0
+}
+```
 
-- created: pasta foi criada por esta execucao
-- kept_not_empty: rollback tentou remover mas pasta tem conteudo novo
-- removed_on_rollback: pasta removida no rollback (estava vazia)
+### Operation types
+- move: rename on same filesystem.
+- copy: copy+verify+remove for cross-filesystem.
+- copy_only: copy without removing source.
+- deduplicate: move duplicate to Archive/Duplicados.
+- refine-move: move within PARA structure (Refine mode).
 
-## retryCount
+### Status values
+- planned: in the plan, not started.
+- in_progress: operation started.
+- copied: file copied but not yet verified (copy/copy_only).
+- verified: copy verified (size + hash match).
+- source_removed: origin removed after verification.
+- completed: operation finished successfully.
+- failed: operation failed. Error recorded.
+- rolled_back: operation was reversed.
+- skipped: user chose to skip.
 
-- Incrementar antes de cada nova tentativa de operacao failed.
-- Ao atingir maxRetryPerOperation: nao oferecer retry automatico.
-- Reset pelo usuario: exigir confirmacao, registrar no manifesto com
-  timestamp.
-- Nunca incrementar para operacoes que nao estejam em failed.
+### Local rename shortcut
+Move via native rename: planned -> completed (skip intermediate
+states because rename is atomic).
 
-## Ciclo de vida de manifestos
+### Retry logic
+- retryCount starts at 0.
+- On failure: increment retryCount, ask user.
+- Max retries: maxRetryPerOperation from config.
+- After max retries: mark as failed, continue to next.
 
-- Incompletos (completedAt null): ficam no root. Visiveis para recovery.
-- Completos: movidos para .para-manifest-history/ no inicio da proxima
-  execucao.
-  Se o move falhar: marcar com sufixo -archive-failed e excluir do pool
-  de scan ativo.
-- Corrompidos: ver ROLLBACK-AND-RECOVERY.md.
+### Deduplicate operation entry
 
-## Informacao sensivel
+```json
+{
+  "index": 12,
+  "type": "deduplicate",
+  "status": "completed",
+  "kept": {
+    "path": "~/Downloads/relatorio-anual-2024.pdf",
+    "hash": "a3f8...c912"
+  },
+  "archived": [
+    {
+      "sourcePath": "~/Downloads/relatorio-anual-2024 (1).pdf",
+      "destinationPath": "~/PARA/4-Arquivo/Duplicados/2026-03-10/relatorio-anual-2024 (1).pdf",
+      "hash": "a3f8...c912",
+      "bytesExpected": 14893056,
+      "bytesCopied": 14893056,
+      "verification": "hash-match"
+    }
+  ],
+  "groupHash": "a3f8...c912",
+  "timestamp": "2026-03-10T14:32:01Z"
+}
+```
 
-O manifesto NUNCA contem: conteudo de arquivos, segredos, tokens, senhas,
-valores de variaveis de ambiente.
-O manifesto PODE conter: caminhos, tipos, nomes de chaves, estados, erros.
+### Manifest lifecycle
+- Incomplete manifest on startup: offer resume or rollback.
+- Complete manifest: archive to .para-manifest-history/.
+- Corrupted manifest (invalid JSON): attempt partial parse.
+  If unrecoverable, rename to .corrupted, warn user, do not
+  delete. Offer fresh start.
+- Unknown schemaVersion: warn user, attempt best-effort read.
+  If incompatible, suggest updating skill.
+
+### Security
+- Manifests never store file contents.
+- Config paths are masked in reports (first 4 chars + ***).
+- Secrets (.env values, API keys) never recorded.
+- Only paths, types, names, states, hashes and errors.
+
+## Searchable index (para-index.jsonl)
+
+One JSON line per organized file. See EXECUTION-STRATEGY.md for
+field schema. Used for:
+- "where was [name]?" command: search originalPath and path fields.
+- "trace [name]" command: aggregate all entries across executions.
+- Cross-location dedup: compare hash against existing entries.
+- Cross-category search: filter by tags regardless of physical path.
+
+### Index lifecycle
+- Appended during execution (Step 6).
+- Never deleted automatically.
+- "reindex" command: re-read manifest history and rebuild index
+  from scratch. Useful after manual file moves.
+- Corruption: if invalid line found, skip and log warning.
+  Offer reindex.
+
+## Manifest history index (.para-manifest-history/index.json)
+
+```json
+{
+  "executions": [
+    {
+      "executionId": "abc-123",
+      "date": "2026-03-10T14:32:00Z",
+      "mode": "Import",
+      "source": "~/Downloads",
+      "operationCount": 47,
+      "status": "completed",
+      "manifestFile": "para-manifest-2026-03-10-1432.json"
+    }
+  ]
+}
+```
+
+Updated after each execution completes.
