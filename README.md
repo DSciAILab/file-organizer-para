@@ -167,7 +167,8 @@ file-organizer-para/
     ├── DUPLICATE-DETECTION.md            # Hash-based dedup algorithm and reports
     ├── KEYWORD-AND-CONTENT-ANALYSIS.md   # Filename tokenization and content reading
     ├── MEDIA-HANDLING.md                 # Photo/video/audio detection and EXIF
-    └── MAINTENANCE-AND-COMMANDS.md       # On-demand commands, watch folder, cron
+    ├── MAINTENANCE-AND-COMMANDS.md       # On-demand commands, watch folder, cron
+    └── RENAMING.md                       # Naming conventions and renaming logic
 ```
 
 ---
@@ -180,8 +181,9 @@ file-organizer-para/
 | 2-Areas       | Ongoing responsibilities with no end date          | Continuous           |
 | 3-Resources   | Reference material, templates, learning content    | Might be useful      |
 | 4-Archive     | Completed projects, inactive areas, old resources  | No longer active     |
+| 5-Fotos       | Personal and professional photo/video library      | Permanent memory     |
 
-The skill also creates `Legado-pre-organizacao/` for files that cannot be classified and `Quarentena/` for items with broken dependencies.
+The skill also creates `Legado-pre-organizacao/` for files that cannot be classified and `Quarentena/` for items with broken dependencies. Photos are organized into `5-Fotos/` by default.
 
 For the full methodology reference, see `references/PARA-METHOD-REFERENCE.md`.
 

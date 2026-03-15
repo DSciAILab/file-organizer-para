@@ -74,6 +74,7 @@ For each FLAGGED item, the user can choose:
 - Skip: do not touch this file.
 - Copy_only: copy but keep original in place.
 - Manual: add to post-move checklist for manual handling.
+- Quarantine: move to Quarentena/ for deferred resolution.
 
 For software projects:
 - Move atomic: move entire folder as unit.
@@ -113,3 +114,35 @@ NOT_CHECKED items:
 5. [FINDER_ALIAS] tool unavailable (mdls not found)
 6. [SCHEDULED_TASK] launchd check skipped (no launchctl access)
 ```
+
+## Quarantine folder
+
+Created at: <root>/Quarentena/
+Populated when: dependency check returns FLAGGED and user
+  chooses the "quarantine" option for deferred resolution.
+
+Purpose: isolate files with unresolved dependency risks so the
+rest of the organization can proceed. Items in Quarentena/ are
+not lost; they are waiting for the user to resolve the risk.
+
+Contents: files or folders where a dependency risk was found
+  but the user chose not to resolve it immediately.
+  Common cases: broken symlinks, absolute-path configs,
+  files currently in use, unresolvable cloud placeholders.
+
+Rules:
+- Items in Quarentena/ are NOT indexed in para-index.jsonl
+  until moved to a final PARA destination.
+- Items in Quarentena/ are NOT subject to rename conventions.
+- Items in Quarentena/ are NOT scanned in subsequent Import runs
+  unless user explicitly includes them.
+- Quarentena/ contents appear in every "PARA status" report
+  with item count and oldest item date.
+- Rollback: quarantine moves are reversible via rollback script.
+
+Resolving quarantined items:
+- Use "maintenance" / "manutencao" command to review Quarentena/.
+- Agent lists items, shows original dependency flag, and asks:
+  [resolve now] [skip again] [force move] [delete (confirm twice)]
+- Once resolved, item is moved to correct PARA destination
+  and indexed normally.

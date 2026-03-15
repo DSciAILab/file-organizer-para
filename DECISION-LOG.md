@@ -1,8 +1,54 @@
 # DECISION-LOG.md
-# File Organizer PARA – Decision Log
+
+## File Organizer PARA – Decision Log
 
 Every design decision made during development, in reverse chronological order.
 Use this to understand WHY things are the way they are.
+
+---
+
+## Session 2026-03-15 (v11 → v12)
+
+### DEC-034 | Naming conventions consolidation
+
+- **Decision:** Extract all naming rules and batch rename procedures into a dedicated `references/RENAMING.md`.
+- **Reason:** Naming conventions were scattered; a single source of truth improves consistency.
+- **Status:** Done (v12.0.0).
+
+### DEC-033 | Version series vs Duplicates
+
+- **Decision:** Files with version markers (v1, v2, draft, approved) are now classified as "Version Series" and protected from duplicate archival.
+- **Reason:** Versioning is intentional; treating it as a duplicate leads to data loss of history.
+- **Status:** Done (references/DUPLICATE-DETECTION.md).
+
+### DEC-032 | Photos as a Library, not Archive
+
+- **Decision:** Changed default photo destination from `4-Arquivo/Fotos/` to `5-Fotos/`. Standalone library structure is now the default.
+- **Reason:** PARA Archive is for inactive items; Photos are a continuous memory library. Putting them in Archive conflicted with PARA semantics.
+- **Status:** Done (references/MEDIA-HANDLING.md).
+
+### DEC-031 | Automated Areas vs Resources disambiguation
+
+- **Decision:** Added Step 2a. Files matching an Area alias but containing "notes", "tutorial", "resumo" etc. are redirected to `3-Recursos` with confirmation.
+- **Reason:** Users often confuse active responsibilities (Areas) with reference material (Resources) on the same topic.
+- **Status:** Done (SKILL.md Section 12).
+
+### DEC-030 | Quarantine system
+
+- **Decision:** Implementation of `Quarentena/` folder for items with broken dependencies (e.g., dead symlinks) that the user cannot resolve immediately.
+- **Reason:** Prevents stalling the workflow; allows deferred resolution via "resolve quarantine" command.
+- **Status:** Done (references/DEPENDENCY-CHECKS.md).
+
+### DEC-029 | Inbox visibility
+
+- **Decision:** Use underscore prefix for `_Inbox/` at root level.
+- **Reason:** Ensures it stays at the top of directory listings for high visibility.
+- **Status:** Done (SKILL.md Section 7).
+
+### DEC-028 | Annual maintenance cycle
+
+- **Decision:** Added Annual schedule (60 min) for deep review, legacy purge, and full reindex.
+- **Status:** Done (Section 24).
 
 ---
 

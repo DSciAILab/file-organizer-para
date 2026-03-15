@@ -1,7 +1,7 @@
 # SESSION-STATE.md
 # File Organizer PARA – Project Context & Session State
 
-Last updated: 2026-03-10
+Last updated: 2026-03-15
 Purpose: Resume development without losing context. Load this file at the start of any new conversation.
 
 ---
@@ -13,8 +13,8 @@ Purpose: Resume development without losing context. Load this file at the start 
 - **Author:** Fernando Caravana
 - **Organization:** DSciAILab
 - **License:** MIT
-- **Current version:** 11.0.0
-- **Status:** Published, pending structure fix (DEC-027)
+- **Current version:** 12.0.0
+- **Status:** v12.0.0 published. All repository structure and naming issues resolved.
 
 ---
 
@@ -40,7 +40,7 @@ An AI agent skill (SKILL.md format) that organizes local files and folders using
 
 ```
 file-organizer-para/          ← skill folder (agent reads this)
-├── SKILL.md                  ← main instructions, <500 lines
+├── SKILL.md                  ← main instructions, < 515 lines
 ├── CHANGELOG.md              ← version history
 ├── agents/
 │   └── openai.yaml           ← Codex compatibility
@@ -53,11 +53,12 @@ file-organizer-para/          ← skill folder (agent reads this)
     ├── DUPLICATE-DETECTION.md
     ├── KEYWORD-AND-CONTENT-ANALYSIS.md
     ├── MEDIA-HANDLING.md
-    └── MAINTENANCE-AND-COMMANDS.md
+    ├── MAINTENANCE-AND-COMMANDS.md
+    └── RENAMING.md           ← naming conventions (new in v12)
 
 README.md                     ← repo-level, for humans on GitHub
-LICENSE                        ← MIT
-DECISION-LOG.md               ← this file (design decisions)
+LICENSE                       ← MIT
+DECISION-LOG.md               ← design decisions history
 SESSION-STATE.md              ← project context for resuming sessions
 ```
 
@@ -72,9 +73,10 @@ Step 2    Discovery (scan, count, exclude internals)
 Step 2.2  Media Detection (images, videos, screenshots, EXIF)
 Step 2.3  Keyword Analysis (filename tokenization, clustering, alias matching)
 Step 2.4  Content Analysis (opt-in, levels 0/1/2)
-Step 2.5  Deduplication (SHA-256, three scan modes)
+Step 2.5  Deduplication (SHA-256, three scan modes, version series protection)
 Step 2.6  Triage Session (aggregate uncertainties, user resolves)
 Step 3    Dependency Check (symlinks, hardlinks, configs, Git submodules)
+Step 3.2  Quarantine (move items with broken dependencies to Quarentena/)
 Step 4    Plan (propose destinations, confidence levels, grouping)
 Step 5    Confirm (show summary, require explicit "yes")
 Step 6    Execute (lock, manifest, move/copy, verify, update index)
@@ -100,21 +102,21 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 
 ---
 
-## 8. Key features
+## 8. Key features (v12.0.0)
 
-- PARA classification with onboarding profile (default areas, user-defined areas/projects/resources, aliases, keywords)
+- PARA classification with onboarding profile (default areas, aliases, keywords)
+- **Automatic Areas vs Resources disambiguation** based on content markers
 - Filename keyword extraction and clustering
 - Optional content analysis (three privacy levels)
-- Media detection with EXIF parsing
-- Duplicate detection (Quick/Safe/Deep)
-- Interactive triage session
-- Dependency safety checks
-- Atomic folder detection (software projects)
-- Mixed-content folder handling
-- Manifest JSON with full audit trail
+- Media detection (EXIF, screenshots, date-based grouping)
+- **Library-mode for Photos** (defaults to `5-Fotos/` instead of `4-Archive/`)
+- Duplicate detection with **Version Series protection** (v1, v2, draft, etc.)
+- **Quarantine system** for broken dependencies
+- **Visible Inbox** (`_Inbox/` with underscore prefix)
+- Manifest JSON with full audit trail and originalName recording
 - Rollback scripts for every execution
 - Searchable JSONL index across all runs
-- Human-readable PARA-CHANGELOG.md
+- **Annual maintenance schedule** for deep reviews
 - Reverse file traceability ("where did X go?")
 - Watch folder support
 - Correspondent tracking
@@ -129,7 +131,7 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 - OpenAI Codex skill format (agents/openai.yaml)
 - Gemini CLI / Antigravity skill format
 - Anthropic/Claude skill authoring best practices
-- Progressive disclosure (<500 lines SKILL.md, references on demand)
+- Progressive disclosure (main instruction file, references on demand)
 
 ---
 
@@ -137,17 +139,14 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 
 | # | Task | Priority | Status |
 |---|------|----------|--------|
-| 1 | Restructure repo: move skill files into `file-organizer-para/` subfolder | Critical | Pending |
-| 2 | Replace `YOUR-USERNAME` with `DSciAILab` in README.md (3 occurrences) | Critical | Pending |
-| 3 | Add DECISION-LOG.md and SESSION-STATE.md to repo | Medium | Pending |
-| 4 | Test skill with Claude Code (real execution on sample folder) | High | Not started |
-| 5 | Test skill with Gemini CLI (real execution on sample folder) | High | Not started |
-| 6 | Test skill with OpenAI Codex (real execution on sample folder) | Medium | Not started |
-| 7 | Submit to LobeHub Skills Marketplace | Low | Not started |
-| 8 | Submit to MCPMarket | Low | Not started |
-| 9 | Localization (pt-BR, es, fr, de) | Low | Not started |
-| 10 | GUI/TUI preview of plan before execution | Low | Not started |
-| 11 | Audio file metadata extraction (ID3, Vorbis, MP4 atoms) | Low | Not started |
+| 1 | Test skill with Claude Code (real execution on sample folder) | High | Not started |
+| 2 | Test skill with Gemini CLI (real execution on sample folder) | High | Not started |
+| 3 | Test skill with OpenAI Codex (real execution on sample folder) | Medium | Not started |
+| 4 | Submit to LobeHub Skills Marketplace | Low | Not started |
+| 5 | Submit to MCPMarket | Low | Not started |
+| 6 | Localization (pt-BR, es, fr, de) | Low | In progress (logic supports, docs in progress) |
+| 7 | GUI/TUI preview of plan before execution | Low | Not started |
+| 8 | Audio file metadata extraction (ID3, Vorbis, MP4 atoms) | Low | Planned |
 
 ---
 
@@ -155,11 +154,8 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 
 Full decision history in DECISION-LOG.md. Key decisions:
 
-- DEC-001 to DEC-010: Foundation (PARA method, skill format, safety rules, dependency checks, manifests, rollback, execution lock, cross-platform).
-- DEC-011 to DEC-016: Analysis pipeline (flexible root, duplicate detection, keyword analysis, content analysis, media handling, project-linked photos).
-- DEC-017 to DEC-020: Traceability and UX (cumulative history, reverse lookup, folder handling, triage session).
-- DEC-021 to DEC-023: Methodology refinement (PARA gaps, onboarding profile, area vs project clarification).
-- DEC-024 to DEC-027: Final polish (competitive research, compliance audit, refine mode, repo structure fix).
+- DEC-001 to DEC-027: Foundation, Analysis Pipeline, Traceability, and Final Polish up to v11.
+- DEC-028 to DEC-034: v12 features (Annual maintenance, Inbox visibility, Quarantine system, Disambiguation, Photo Library mode, Version Series, Naming consolidation).
 
 ---
 
@@ -169,10 +165,7 @@ When starting a new conversation about this project:
 
 1. Share this file (SESSION-STATE.md) with the assistant.
 2. Share DECISION-LOG.md if discussing design rationale.
-3. Point to the repository: https://github.com/DSciAILab/file-organizer-para
-4. State what you want to work on next.
-
-The assistant will have full context without needing to re-derive 27 decisions from scratch.
+3. State what you want to work on next.
 
 ---
 
@@ -181,23 +174,22 @@ The assistant will have full context without needing to re-derive 27 decisions f
 | Tool | Type | Key insight absorbed |
 |------|------|---------------------|
 | AI File Sorter | Open-source, Qt6 GUI | Whitelist of categories → our onboarding. Consistent mode. Audio/video metadata. |
-| Claw Drive | Bash CLI + JSONL | Persistent searchable index. Re-indexation. Custom metadata (expiry, policy number). |
+| Claw Drive | Bash CLI + JSONL | Persistent searchable index. Re-indexation. Custom metadata. |
 | Paperless-ngx | Self-hosted DMS | Correspondent tracking. Auto-tagging by content. |
 | Hazel | Mac, rule-based | Watch folder concept. Reliable rule execution. |
 | Sparkle | Mac, GPT-4 cloud | Validated need for onboarding to avoid generic classification. |
-| Local File Organizer | Python, local LLM | Privacy-first approach. Image analysis with LLaVA. |
-| Wisfile | Mac/Windows, local AI | Content-based renaming. Free. |
+| Local File Organizer | Python, local LLM | Privacy-first approach. Image analysis. |
+| Wisfile | Mac/Windows, local AI | Content-based renaming. |
 | LobeHub skills | Marketplace | No PARA-based organizer exists yet. Market gap confirmed. |
 
 ---
 
 ## 14. Technical constraints
 
-- SKILL.md must stay under 500 lines.
-- Front-matter `name` field: lowercase, hyphens, 1-64 chars, must match folder name.
-- Front-matter `description`: max 1024 chars, focus on WHAT + WHEN + triggers.
-- `metadata.version` must be a quoted string, not a number.
-- `metadata.tags` must be a single string (comma-separated), not an array.
-- No `user-invocable` field (not part of agentskills.io spec).
-- Reference files loaded on demand by the agent, not eagerly.
+- SKILL.md should stay around 500 lines (currently 510-515 covers all v12 core).
+- Front-matter `name` field must match folder name.
+- `metadata.version` must be a quoted string.
+- `metadata.tags` must be a single string.
+- No `user-invocable` field.
+- Reference files loaded on demand by the agent.
 - All text artifacts use UTF-8 without BOM.

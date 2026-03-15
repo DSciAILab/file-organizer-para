@@ -21,7 +21,7 @@ compatibility: >-
   macOS, Linux, Windows, WSL.
 metadata:
   author: "Fernando Caravana"
-  version: "11.0.0"
+  version: "12.0.0"
   tags: "file-organization, para-method, productivity, filesystem, deduplication"
 ---
 
@@ -31,9 +31,9 @@ Organizes local files using Tiago Forte's PARA methodology.
 Never break references, never move without verification, never
 execute without explicit approval.
 
-For complete PARA definitions, classification examples, naming
-conventions and methodological references, see
-[references/PARA-METHOD-REFERENCE.md].
+For complete PARA definitions, classification examples, and
+methodological references, see [references/PARA-METHOD-REFERENCE.md].
+For naming conventions and rename triggers, see [references/RENAMING.md].
 
 ## 1. Operational principles
 
@@ -102,11 +102,14 @@ Root config: <root>/.para-config.json
 - maxDepthBelowCategoryRoot: 3
 - Alert if trees > 5 (dispersed structure)
 - profile: areas, activeProjects, resources with aliases and keywords
+- mediaPolicy: "standalone" (default), "para", or "ignore"
+- projectTemplate: ordered list of subfolder names for new projects
 
 Searchable index: <root>/para-index.jsonl
 - One JSON line per organized file.
-- Fields: path, originalPath, hash, tags, category, area, project,
-  description, correspondent, customMetadata, organizedAt, executionId.
+- Fields: path, originalPath, originalName, hash, tags, category,
+  area, project, description, correspondent, customMetadata,
+  organizedAt, executionId.
 - Used for traceability, cross-location dedup and semantic search.
 
 For complete config, lock, manifest and index schemas, see
@@ -155,6 +158,10 @@ Mandatory validation (all scenarios):
   C:\Windows, C:\Program Files).
 - Path not inside .git, node_modules or similar.
 
+On root creation, always create _Inbox/ at root level.
+The underscore prefix keeps _Inbox/ at top of any filesystem listing.
+Register _Inbox/ as default watch folder in config.watchFolders.
+
 ## 8. Onboarding profile (Step 0 continued)
 
 First execution, after root is defined:
@@ -170,6 +177,11 @@ For each item the user mentions, ask:
 - Ongoing with sub-projects = Area with subProjects.
 
 Then ask about active projects and resource topics.
+
+Ask for project subfolder template preference:
+"Default subfolders for new projects:
+ 01_Briefing, 02_Research, 03_Assets, 04_Deliverables, 05_Communication
+ Keep default or customize?"
 
 Store in .para-config.json under "profile" with aliases and
 keywords per item. Aliases feed Keyword Analysis (Step 2.3).
@@ -256,12 +268,18 @@ Step 8.  Report: full report, manual checklist, rollback script,
 Decision tree:
 1. Specific result with deadline? -> 1-Projetos / 1-Projects
 2. Ongoing responsibility? -> 2-Areas
+2a. If file matches an Area alias BUT content signals learning
+    or reference material (tokens: "notes", "tutorial", "resumo",
+    "curso", "research", "slides", "cheatsheet"): -> 3-Recursos.
+    Present to user: "This looks like learning material about
+    [area topic], not an active responsibility.
+    Suggest: 3-Recursos/[Topic]. Confirm?"
 3. Reference or learning? -> 3-Recursos / 3-Resources
 4. Inactive or completed? -> 4-Arquivo / 4-Archive
 
 Profile areas and aliases boost classification confidence.
 Low confidence for Work vs Personal: ask.
-Ambiguous: propose batch or triage to Legacy-pre-organization.
+Ambiguous: propose batch or triage to Legado-pre-organizacao.
 
 For detailed definitions and examples, see
 [references/PARA-METHOD-REFERENCE.md].
@@ -302,14 +320,16 @@ PARA ORGANIZATION PLAN
 ## 15. Naming conventions
 
 Folders: YYYY-MM_Name (projects), Descriptive-name (areas/resources),
-NN_Name (subfolders).
+NN_Name (subfolders), _Inbox (always underscore-prefixed).
 Files: YYYY-MM-DD_Description.ext, version -v1/-v2, never FINAL.
-Hyphens between words, ASCII safe, preserve extension.
+Hyphens between words, ASCII safe, preserve extension lowercase.
 Collision: -duplicata-N. Windows: validate reserved names.
 Non-latin Unicode: FLAGGED, never auto-rename.
-Legacy-pre-organization: no automatic rename.
+Legado-pre-organizacao: no automatic rename.
 
-For complete conventions, see [references/PARA-METHOD-REFERENCE.md].
+For complete conventions, rename triggers, photo/audio rename,
+version series detection and batch rename, see
+[references/RENAMING.md].
 
 ## 16. Scan modes
 
@@ -344,7 +364,10 @@ absolute path, cloud boundary, files >1GB, read-only, in-use,
 cross-filesystem, space, case-collision, path length, reserved names,
 permissions, network filesystem, hash when required.
 
-For complete check list and options, see
+Quarantine option: for FLAGGED items user cannot resolve immediately,
+move to <root>/Quarentena/ for deferred handling.
+
+For complete check list, quarantine rules, and options, see
 [references/DEPENDENCY-CHECKS.md].
 
 ## 19. Folder handling rules
@@ -362,14 +385,16 @@ In order of precedence:
 
 Exact duplicate: identical SHA-256 hash regardless of name or location.
 Probable duplicate: same size + same extension + similar name
-(Levenshtein <= 3), different hash. Report only.
+(Levenshtein <= 3), different hash. Requires human decision.
+Version series: explicit version markers in name. Not a duplicate.
 
 Two-phase algorithm: size grouping then hash comparison.
 Integration with scan modes: see Section 16.
 Available as workflow step (2.5) and on-demand command (Section 23).
 
-For complete algorithm, report format, manifest schema, performance
-guidelines and safety rules, see [references/DUPLICATE-DETECTION.md].
+For complete algorithm, probable duplicate decision flow, version
+series detection, archive destination rules, and known limitations,
+see [references/DUPLICATE-DETECTION.md].
 
 ## 21. Execution
 
@@ -395,7 +420,7 @@ Every execution generates JSON manifest (schemaVersion 8).
 Operations: type (move/copy/copy_only/deduplicate/refine-move),
 status (planned -> in_progress -> copied -> verified ->
 source_removed -> completed / failed / rolled_back).
-Rename is attribute (renamed=true), not type.
+Rename is attribute (renamed=true, originalName recorded), not type.
 Local move via rename: planned -> completed (intentional).
 completedAt only when all operations finish.
 Deduplicate: records kept, archived, groupHash.
@@ -409,30 +434,34 @@ For complete JSON schema and state rules, see
 - "new project" / "novo projeto": create folder with recommended subs.
 - "new area" / "nova area": create area folder.
 - "archive project" / "arquivar projeto": move to Archive.
-- "maintenance" / "manutencao": run periodic review.
-- "PARA status" / "status PARA": show config and counts.
+- "maintenance" / "manutencao": run periodic review incl. _Inbox/.
+- "PARA status" / "status PARA": show config, counts, _Inbox/,
+  Quarentena/ and Legado-pre-organizacao/ item counts.
 - "find duplicates" / "encontrar duplicados": run duplicate detection
   independently. Works even without configured root.
   See [references/DUPLICATE-DETECTION.md].
 - "where was [name]?" / "onde estava [nome]?": search all manifests
-  and index for file history. Partial name match supported.
-- "trace [name]" / "rastrear [nome]": show full trajectory of a file
-  across all executions.
+  and index for file history. Partial name and originalName match.
+- "trace [name]" / "rastrear [nome]": show full trajectory including
+  rename history.
 - "update areas" / "atualizar areas": modify onboarding profile.
 - "refine [folder]" / "melhorar [pasta]": enter Refine mode for a
   specific folder inside the PARA root.
-- "watch [folder]": enable watch mode for a folder. Agent reports
-  new files periodically and suggests classification.
+- "watch [folder]": enable watch mode for a folder.
+- "resolve quarantine" / "resolver quarentena": review and resolve
+  items in Quarentena/.
 
 For details, see [references/MAINTENANCE-AND-COMMANDS.md].
 
 ## 24. Maintenance
 
-Weekly (5 min): inactive projects >30 days, suggest archiving.
+Weekly (5 min): _Inbox/ triage, inactive projects >30 days.
 Monthly (15 min): areas/resources unchanged >90 days, suggest review.
-Check Legacy-pre-organization. Re-run dependency check if relevant.
-Re-run duplicate detection on high-turnover folders if user accepts.
-Suggest index reindex for enriching descriptions of older entries.
+Quarterly (30 min): full dependency re-check, profile review.
+Annual (60 min): archive review, Legado purge, Resources consolidation,
+  full reindex. See [references/MAINTENANCE-AND-COMMANDS.md].
+Check Legado-pre-organizacao and Quarentena/. Re-run dependency check
+if relevant. Re-run duplicate detection on high-turnover folders.
 
 ## 25. Failure during execution
 
@@ -444,7 +473,7 @@ Config edit: offer backup restore, add to checklist.
 ## 26. Rollback
 
 Reverse order of completed operations.
-move: move back, restore name if renamed.
+move: move back, restore name if renamed (use originalName).
 copy: if source exists, remove destination. If not, move back.
 copy_only: remove destination (source intact).
 deduplicate: move archived files back to original location.
@@ -481,7 +510,8 @@ encoding, >10GB, >10,000 items in one folder, files in use, corrupted
 manifest, revoked permissions, exhausted space, cloud sync conflicts,
 unknown or old manifest schema, duplicates with hard links (same
 inode = not duplicate, report as hard link), Refine mode moving files
-between PARA categories, watch mode detecting rapid file creation.
+between PARA categories, watch mode detecting rapid file creation,
+Quarentena/ items appearing in subsequent scans (exclude by default).
 
 For detailed handling, see [references/ROLLBACK-AND-RECOVERY.md]
 and [references/EXECUTION-STRATEGY.md].
