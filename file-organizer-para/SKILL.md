@@ -159,6 +159,7 @@ Mandatory validation (all scenarios):
 - Path not inside .git, node_modules or similar.
 
 On root creation, always create _Inbox/ at root level.
+Whenever mediaPolicy is "standalone" (default), ensure 5-Fotos/ exists at root level for the memory library.
 The underscore prefix keeps _Inbox/ at top of any filesystem listing.
 Register _Inbox/ as default watch folder in config.watchFolders.
 
@@ -276,6 +277,10 @@ Decision tree:
     Suggest: 3-Recursos/[Topic]. Confirm?"
 3. Reference or learning? -> 3-Recursos / 3-Resources
 4. Inactive or completed? -> 4-Arquivo / 4-Archive
+
+Note: Personal photos with mediaPolicy="standalone" (default) are strictly moved to
+5-Fotos/ (Memory Library) and are NOT classified into the 4 PARA categories.
+Screenshots are moved to 3-Recursos/Screenshots/ by default.
 
 Profile areas and aliases boost classification confidence.
 Low confidence for Work vs Personal: ask.

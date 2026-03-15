@@ -2,13 +2,21 @@
 
 ## [12.0.0] - 2026-03-15
 
+### README.md
+
+- Fixed installation instructions: added `rm -rf /tmp/file-organizer-para`
+  before cloning to ensure updates work correctly even if the
+  directory already exists.
+
 ### New files
+
 - references/RENAMING.md: dedicated reference for all naming
   conventions, rename triggers, photo/audio rename, version series
   vs accidental duplicate detection, transliteration rules,
   batch rename flow, and manifest recording for renames.
 
 ### references/DUPLICATE-DETECTION.md
+
 - Added version series definition and detection: files with
   explicit version markers (v1/v2, -draft/-approved) are now
   classified as VERSION SERIES and excluded from duplicate actions.
@@ -25,6 +33,7 @@
   flagging as probable duplicate.
 
 ### references/MEDIA-HANDLING.md
+
 - Fixed photo default destination: changed from
   4-Arquivo/Fotos/YYYY/YYYY-MM/ to 5-Fotos/YYYY/YYYY-MM_Event-Name/.
   Photos are a memory library, not archived inactive documents.
@@ -42,6 +51,7 @@
 - Added reference to RENAMING.md for photo rename convention.
 
 ### references/DEPENDENCY-CHECKS.md
+
 - Added Quarantine option to "Options per flag type": move FLAGGED
   items to Quarentena/ for deferred resolution.
 - Added Quarantine folder section: full documentation of
@@ -50,6 +60,7 @@
   "resolve quarantine" command.
 
 ### references/MAINTENANCE-AND-COMMANDS.md
+
 - "new project" command: added profile.projectTemplate support.
   Default subfolders updated to 01_Briefing, 02_Research,
   03_Assets, 04_Deliverables, 05_Communication. User asked to
@@ -65,6 +76,7 @@
   review, Legado purge, Resources consolidation, full reindex.
 
 ### SKILL.md
+
 - version: 11.0.0 -> 12.0.0
 - Section 7: added _Inbox/ creation on root setup. Underscore
   prefix documented. Registered as default watch folder.
@@ -98,6 +110,7 @@
 ## [11.0.0] - 2026-03-10
 
 ### Compliance
+
 - Rewrote description field: WHAT + WHEN + trigger phrases, under 1024 chars.
 - Added license: MIT.
 - Added compatibility field.
@@ -108,6 +121,7 @@
 - Added agents/openai.yaml for Codex compatibility.
 
 ### New features
+
 - Onboarding profile: default areas, interactive adjustment, aliases,
   sub-projects, interaction mode selection (Guided/Full control/Full trust).
 - Operation modes: Import, Refine, Maintain. Auto-detected from
@@ -139,11 +153,13 @@
 - Tags in manifest/index for cross-category search.
 
 ### New reference files
+
 - references/DUPLICATE-DETECTION.md
 - references/KEYWORD-AND-CONTENT-ANALYSIS.md
 - references/MEDIA-HANDLING.md
 
 ### Updated
+
 - Manifest schemaVersion 7 -> 8. New types: deduplicate, refine-move.
 - Config schema: profile field with areas, activeProjects, resources.
 - Workflow: Steps 2.2, 2.3, 2.4, 2.5, 2.6 added between Discovery
@@ -155,11 +171,13 @@
   moves, watch mode rapid creation.
 
 ## [10.0.0] - 2026-03-09
+
 - Added duplicate detection (three options).
 - Root setup with three scenarios (define, ask, delegate).
 - Scan modes integrated with dedup behavior.
 
 ## [9.0.0] - 2026-03-09
+
 - Initial public release with full PARA workflow.
 - Dependency checks, manifest, rollback, maintenance.
 - Six reference files. Compliant with agentskills.io spec.

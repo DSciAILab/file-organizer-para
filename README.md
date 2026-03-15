@@ -61,6 +61,7 @@ Most people have hundreds or thousands of files scattered across Downloads, Desk
 ### Claude (Global Skill)
 
 ```bash
+rm -rf /tmp/file-organizer-para
 git clone https://github.com/DSciAILab/file-organizer-para.git /tmp/file-organizer-para
 mkdir -p ~/.claude/skills/file-organizer-para
 cp -r /tmp/file-organizer-para/file-organizer-para/* ~/.claude/skills/file-organizer-para/
@@ -75,6 +76,7 @@ ls ~/.claude/skills/file-organizer-para/SKILL.md
 ### Gemini CLI / Antigravity (Global Skill)
 
 ```bash
+rm -rf /tmp/file-organizer-para
 git clone https://github.com/DSciAILab/file-organizer-para.git /tmp/file-organizer-para
 mkdir -p ~/.gemini/skills/file-organizer-para
 cp -r /tmp/file-organizer-para/file-organizer-para/* ~/.gemini/skills/file-organizer-para/
@@ -85,6 +87,7 @@ For Antigravity, the path may be `~/.gemini/antigravity/skills/file-organizer-pa
 ### OpenAI Codex
 
 ```bash
+rm -rf /tmp/file-organizer-para
 git clone https://github.com/DSciAILab/file-organizer-para.git /tmp/file-organizer-para
 mkdir -p ~/.codex/skills/file-organizer-para
 cp -r /tmp/file-organizer-para/file-organizer-para/* ~/.codex/skills/file-organizer-para/

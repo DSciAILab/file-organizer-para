@@ -1,5 +1,4 @@
 # SESSION-STATE.md
-# File Organizer PARA – Project Context & Session State
 
 Last updated: 2026-03-15
 Purpose: Resume development without losing context. Load this file at the start of any new conversation.
@@ -9,7 +8,7 @@ Purpose: Resume development without losing context. Load this file at the start 
 ## 1. Project identity
 
 - **Name:** file-organizer-para
-- **Repository:** https://github.com/DSciAILab/file-organizer-para
+- **Repository:** [file-organizer-para](https://github.com/DSciAILab/file-organizer-para)
 - **Author:** Fernando Caravana
 - **Organization:** DSciAILab
 - **License:** MIT
@@ -38,7 +37,7 @@ An AI agent skill (SKILL.md format) that organizes local files and folders using
 
 ## 4. Architecture
 
-```
+```text
 file-organizer-para/          ← skill folder (agent reads this)
 ├── SKILL.md                  ← main instructions, < 515 lines
 ├── CHANGELOG.md              ← version history
@@ -66,7 +65,7 @@ SESSION-STATE.md              ← project context for resuming sessions
 
 ## 5. Workflow pipeline
 
-```
+```text
 Step 0    Setup (root directory, onboarding profile, interaction mode)
 Step 1    Source negotiation (validate origin, detect operation mode)
 Step 2    Discovery (scan, count, exclude internals)
@@ -109,7 +108,7 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 - Filename keyword extraction and clustering
 - Optional content analysis (three privacy levels)
 - Media detection (EXIF, screenshots, date-based grouping)
-- **Library-mode for Photos** (defaults to `5-Fotos/` instead of `4-Archive/`)
+- **Library-mode for Photos** (enforces `5-Fotos/` root, strictly outside PARA document categories)
 - Duplicate detection with **Version Series protection** (v1, v2, draft, etc.)
 - **Quarantine system** for broken dependencies
 - **Visible Inbox** (`_Inbox/` with underscore prefix)
@@ -138,7 +137,7 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 ## 10. Pending tasks
 
 | # | Task | Priority | Status |
-|---|------|----------|--------|
+| :--- | :--- | :--- | :--- |
 | 1 | Test skill with Claude Code (real execution on sample folder) | High | Not started |
 | 2 | Test skill with Gemini CLI (real execution on sample folder) | High | Not started |
 | 3 | Test skill with OpenAI Codex (real execution on sample folder) | Medium | Not started |
@@ -152,10 +151,10 @@ Step 8    Report (summary, manual checklist, rollback script, PARA-CHANGELOG)
 
 ## 11. Decisions index
 
-Full decision history in DECISION-LOG.md. Key decisions:
+Full decision history in [DECISION-LOG.md](DECISION-LOG.md). Key decisions:
 
 - DEC-001 to DEC-027: Foundation, Analysis Pipeline, Traceability, and Final Polish up to v11.
-- DEC-028 to DEC-034: v12 features (Annual maintenance, Inbox visibility, Quarantine system, Disambiguation, Photo Library mode, Version Series, Naming consolidation).
+- DEC-028 to DEC-036: v12 features (Annual maintenance, Inbox visibility, Quarantine system, Disambiguation, Photo Library mode, Version Series, Naming consolidation, Installation fix).
 
 ---
 
@@ -164,7 +163,7 @@ Full decision history in DECISION-LOG.md. Key decisions:
 When starting a new conversation about this project:
 
 1. Share this file (SESSION-STATE.md) with the assistant.
-2. Share DECISION-LOG.md if discussing design rationale.
+2. Share [DECISION-LOG.md](DECISION-LOG.md) if discussing design rationale.
 3. State what you want to work on next.
 
 ---
@@ -172,7 +171,7 @@ When starting a new conversation about this project:
 ## 13. Competitors analyzed
 
 | Tool | Type | Key insight absorbed |
-|------|------|---------------------|
+| :--- | :--- | :--- |
 | AI File Sorter | Open-source, Qt6 GUI | Whitelist of categories → our onboarding. Consistent mode. Audio/video metadata. |
 | Claw Drive | Bash CLI + JSONL | Persistent searchable index. Re-indexation. Custom metadata. |
 | Paperless-ngx | Self-hosted DMS | Correspondent tracking. Auto-tagging by content. |
@@ -186,7 +185,7 @@ When starting a new conversation about this project:
 
 ## 14. Technical constraints
 
-- SKILL.md should stay around 500 lines (currently 510-515 covers all v12 core).
+- SKILL.md should stay around 500 lines (currently 510-520 covers all v12 core).
 - Front-matter `name` field must match folder name.
 - `metadata.version` must be a quoted string.
 - `metadata.tags` must be a single string.
